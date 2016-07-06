@@ -3,8 +3,7 @@
 #   		(c) Cameron J. Liang
 #		    University of Chicago
 #     		jwliang@oddjob.uchicago.edu
-#     	    cameron.Liang@gmail.com
-# 			MCMC VPFIT: A Full Bayesian Approach to Voigt Profile Fitting
+#       	MCMC VPFIT: A Full Bayesian Approach to Voigt Profile Fitting
 ########################################################################################
 
 ------------------------------------------------------------------------------------------
