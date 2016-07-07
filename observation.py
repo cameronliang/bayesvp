@@ -109,16 +109,20 @@ class obs_data:
         for line in component_lines:
             line = filter(None,line.split(' '))
             atom  = line[1]; state = line[2] # To obtain transition data
-            logNs.append(float(line[3])); 
-            bs.append(float(line[4])); 
-            redshifts.append(float(line[5])) 
-            
+            logNs.append(line[3]); 
+            bs.append(line[4]);
+            redshifts.append(line[5])
+
+            if line[5][-1].isalpha():
+                temp_redshift = line[5][:-1]
+            else:
+                temp_redshift = line[5]
+
             for i in xrange(len(self.wave_begins)):
                 # Each component gets a set of all of the transitions data
-                temp_transitions_params = get_transitions_params(atom,state,self.wave_begins[i],self.wave_ends[i],float(line[5]))
+                temp_transitions_params = get_transitions_params(atom,state,self.wave_begins[i],self.wave_ends[i],float(temp_redshift))
                 if temp_transitions_params is not None:
                     transitions_params_array.append(temp_transitions_params)
-        
         
         # Shape = (n_components,n_transitions,4)
         # For each component, there is n_transitions within the wavelength 
@@ -128,8 +132,47 @@ class obs_data:
         # They also need to fall within range of specified wavelength (guessed z cannot be too large)
         self.transitions_params_array = np.array(transitions_params_array)
         self.vp_params = np.array([logNs,bs,redshifts]).T
-        self.n_component = len(transitions_params_array)        
-         
+        self.n_component = len(transitions_params_array)
+
+        # Define what kind of parameters to get walker initiazation ranges.
+        # and for fixing and freeing paramters. 
+        vp_params_type = [None]*len(self.vp_params.flatten())
+        vp_params_type[::3]  = ['logN'] * (len(vp_params_type[::3]))
+        vp_params_type[1::3] = ['b']    * (len(vp_params_type[1::3]))
+        vp_params_type[2::3] = ['z']    * (len(vp_params_type[2::3]))
+        
+
+        flat_params = self.vp_params.flatten()
+        flags = np.zeros(len(flat_params))
+        free_params = np.zeros(len(flat_params))
+
+        letters = [None]*len(flat_params)
+        for i in xrange(len(flat_params)):
+            for j in xrange(len(flat_params[i])):
+                if flat_params[i][j].isalpha():
+                    letters[i] = flat_params[i][j]
+        unique_letters = filter(None,list(set(letters)))
+
+        n_free_params_counter = 0
+        for i in range(len(letters)):
+            if letters[i] == None:
+                flags[i] = n_free_params_counter
+                n_free_params_counter += 1
+
+        for unique_letter in unique_letters:
+            inds = [i for i, x in enumerate(letters) if x == unique_letter]
+            if unique_letter.islower(): 
+                flags[inds] = n_free_params_counter
+                n_free_params_counter += 1
+            else:
+                for index in inds:
+                    flags[index] = None#-float(flat_params[index][:-1])
+            
+        # Walkers initialization will use these to create the parameters
+        # Model will use these to correctly construct sets of (logN, b, z) for each component
+        self.vp_params_type = vp_params_type
+        self.vp_params_flags = flags
+
 
 """Global Object defined by the class""" 
 
@@ -140,6 +183,7 @@ obs_spec.fileio_mcmc_params()
 obs_spec.fitting_data()
 obs_spec.fitting_params()
 
+"""
 print('\n')
 print('Spec Path: %s'     % obs_spec.spec_path)
 print('Fitting:')
@@ -150,3 +194,4 @@ for i in xrange(len(obs_spec.wave_begins)):
     print('Selected data wavelegnth region: (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
 print('Output MCMC chain: %s' % obs_spec.chain_short_fname) 
 print('\n')
+"""
