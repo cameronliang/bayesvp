@@ -67,7 +67,7 @@ class obs_data:
         for i in range(len(self.wave_begins)):
             inds = np.where((wave>=self.wave_begins[i]) & (wave<self.wave_ends[i]))[0]
             all_inds.append(inds)
-        
+
         all_inds   = np.hstack(np.array(all_inds))
         self.wave  = wave[all_inds]
         self.flux  = flux[all_inds]
@@ -166,16 +166,15 @@ class obs_data:
                 n_free_params_counter += 1
             else:
                 for index in inds:
-                    flags[index] = None#-float(flat_params[index][:-1])
+                    flags[index] = None
             
         # Walkers initialization will use these to create the parameters
         # Model will use these to correctly construct sets of (logN, b, z) for each component
-        self.vp_params_type = vp_params_type
-        self.vp_params_flags = flags
+        self.vp_params_type  = np.array(vp_params_type)
+        self.vp_params_flags = np.array(flags)
 
 
-"""Global Object defined by the class""" 
-
+"""Global Object defined by the class"""
 # Command line argument - run time feed. e.g., python main.py full_path_to_config_file
 config_fname = sys.argv[1]
 obs_spec = obs_data(config_fname)
@@ -183,7 +182,6 @@ obs_spec.fileio_mcmc_params()
 obs_spec.fitting_data()
 obs_spec.fitting_params()
 
-"""
 print('\n')
 print('Spec Path: %s'     % obs_spec.spec_path)
 print('Fitting:')
@@ -194,4 +192,3 @@ for i in xrange(len(obs_spec.wave_begins)):
     print('Selected data wavelegnth region: (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
 print('Output MCMC chain: %s' % obs_spec.chain_short_fname) 
 print('\n')
-"""

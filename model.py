@@ -159,10 +159,6 @@ def General_Intensity(logN,b,z,wave,atomic_params):
     # Return Normalized intensity
     return np.exp(-tau.astype(np.float))
 
-def model_prediction_single_component(alpha,wave,transition_name):
-    logN,b,z = alpha;
-    return Intensity(logN,b,z,wave,transition_name)
-
 def model_prediction_components(alpha,wave,n_component,transition_name):
     if n_component == 1:
         logN,b,z = alpha
@@ -186,37 +182,39 @@ def model_prediction(alpha,wave,n_component,transition_names):
     for i in xrange(n_trans):
         spec[i] = model_prediction_components(alpha,wave,n_component,transition_names[i])
     return np.product(spec,axis=0)
-    
-    
-def generic_prediction(alpha,wave,transitions_params_array):
-    """
-    given set of (logN,b,z) and the same number of set with 
-    atomic_params_array, (wave0,osc_f,gamma,mass) 
-    """
 
-    n_component = len(transitions_params_array)
-    alpha = alpha.reshape(n_component,3)
+def generic_prediction(alpha,obs_spec_obj):
 
-    spec = []#np.ones((n_component,n_transitions,len(wave)))
+    component_flags = obs_spec_obj.vp_params_flags.reshape(obs_spec_obj.n_component,3)
 
-    for i in xrange(n_component):
-        logN,b,z = alpha[i]        
-        # Each component has a different number of transitions.
-        for j in xrange(transitions_params_array[i].shape[0]): 
-            spec.append(General_Intensity(logN,b,z,wave,transitions_params_array[i][j]))
+    spec = [] 
+    for i in xrange(obs_spec_obj.n_component):
+
+        temp_alpha = np.zeros(3)
+        for j in xrange(3):
+            # NaN indicates parameter has been fixed
+            if np.isnan(component_flags[i][j]): 
+                # access the fixed value from vp_params after removing the upper case letter 
+                temp_alpha[j] = float(obs_spec_obj.vp_params[i][j][:-1])
+            else: 
+                # access the index map from flags to alpha 
+                temp_alpha[j] = alpha[component_flags[i][j]] 
+
+        # For each component, there may exists more than one transitions
+        for k in xrange(np.atleast_1d(obs_spec_obj.transitions_params_array[i].shape[0])):
+            spec.append(General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k]))
     
     spec = np.array(spec)
     return np.product(spec,axis=0)
 
 if __name__ == '__main__':
-
      
     import matplotlib.pyplot as pl
     from observation import obs_spec
     
-    flux = generic_prediction(obs_spec.vp_params.flatten(),obs_spec.wave,obs_spec.transitions_params_array)
+    alpha = np.array([14,70,13,20]) 
+    flux = generic_prediction(alpha,obs_spec.wave,        obs_spec.transitions_params_array)
     
-    print np.shape(flux)
     pl.plot(obs_spec.wave,flux)
     pl.ylim([0,1.4])
     pl.show()

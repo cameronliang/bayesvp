@@ -5,34 +5,6 @@ import sys,os
 from observation import obs_spec
 
 
-def create_walkers_init(vp_params,vp_params_type,flags):
-	"""
-	the free parameters are now correctly generated in nwalkers. 
-	the next thing to do is to remember the fixed parameters, 
-	that are not free (in the MCMC), then correctly put them 
-	into the (logN, b, z) in each component
-	"""
-	print vp_params.flatten()
-	print vp_params_type
-	print flags
-
-	c = 299792.458
-	temp_flags = flags[~np.isnan(flags)]
-	n_params =  len(list(set(temp_flags)))
-
-	p0 = np.zeros((n_params,obs_spec.nwalkers))
-	for i in range(n_params):
-		if vp_params_type[i] == 'logN':
-			p0[i] = np.random.uniform(5,20,size=obs_spec.nwalkers)
-		elif vp_params_type[i] == 'b':
-			p0[i] = np.random.uniform(0,30,size=obs_spec.nwalkers)
-		elif vp_params_type[i] == 'z':
-			p0[i] = np.random.uniform(-50/c,50/c,size=obs_spec.nwalkers)
-
-	print np.transpose(p0).shape
-	return np.transpose(p0)
-
-
 def create_guass_init(vp_params):
 	c = 299792.458
 	n_component,n_params_component = vp_params.shape
@@ -45,11 +17,6 @@ def create_guass_init(vp_params):
 	p0[1::3] = np.random.uniform(0,30,size=obs_spec.nwalkers)
 	p0[2::3] = np.random.uniform(-50/c,50/c,size=obs_spec.nwalkers)
 
-	#for i in xrange(n_params):
-		#p0[i] = np.random.normal(vp_params_flat[i],0.01,size=obs_spec.nwalkers)
-	#	if i % 
-	#	p0[i] = np.random.normal(vp_params_flat[i],0.01,size=obs_spec.nwalkers)
- 
 	return np.transpose(p0)
 
 def create_uniform_init(n_component,nwalkers):
@@ -63,19 +30,54 @@ def create_uniform_init(n_component,nwalkers):
 	p0 = alpha.swapaxes(0,1).reshape(n_component*3,nwalkers)
 	return np.transpose(p0)
 
+
+################################################################################
+
+def create_walkers_init(vp_params,vp_params_type,flags):
+	"""
+	the free parameters are now correctly generated in nwalkers. 
+	the next thing to do is to remember the fixed parameters, 
+	that are not free (in the MCMC), then correctly put them 
+	into the (logN, b, z) in each component
+	"""
+	#print vp_params.flatten()
+	#print vp_params_type
+	#print flags
+
+	c = 299792.458
+	temp_flags = flags[~np.isnan(flags)]
+	n_params =  len(list(set(temp_flags)))
+
+	# Get all the free parameters types
+	final_vp_params_type = vp_params_type[~np.isnan(flags)]
+
+	p0 = np.zeros((n_params,obs_spec.nwalkers))
+	for i in range(n_params): 
+		if final_vp_params_type[i] == 'logN':
+			p0[i] = np.random.uniform(5,20,size=obs_spec.nwalkers)
+		elif final_vp_params_type[i] == 'b':
+			p0[i] = np.random.uniform(0,30,size=obs_spec.nwalkers)
+		elif final_vp_params_type[i] == 'z':
+			p0[i] = np.random.uniform(-50/c,50/c,size=obs_spec.nwalkers)
+
+	return np.transpose(p0)
+
 def run_kombine(output_fname):
 	from likelihood import lnprob
 	import kombine
 
 	# define the MCMC parameters.
-	ndim = 3*obs_spec.n_component
-	p0 = create_guass_init(obs_spec.vp_params)
-
+	p0 = create_walkers_init(obs_spec.vp_params,
+		 obs_spec.vp_params_type,obs_spec.vp_params_flags)
+	
+	ndim = np.shape(p0)[1]
+	
 	# Start counting time
 	t1 = time.time()
 
 	# Set up the sampler
 	print("Running MCMC...")
+	print("number of parameters = %i" % ndim)
 	sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.threads)
 
 	# First do a rough burn in based on accetance rate.
@@ -88,5 +90,6 @@ def run_kombine(output_fname):
 
 if __name__ == '__main__':
 
-	create_walkers_init(obs_spec.vp_params,obs_spec.vp_params_type,obs_spec.vp_params_flags)
-	#run_kombine(obs_spec.chain_fname)
+	p0 = create_walkers_init(obs_spec.vp_params,obs_spec.vp_params_type,obs_spec.vp_params_flags)
+
+	run_kombine(obs_spec.chain_fname)

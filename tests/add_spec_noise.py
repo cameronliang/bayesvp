@@ -19,8 +19,9 @@ def write_spec(input_path,snr):
 
 
 def main():
-    input_path = '/data/jwliang/projects_data/theory/spec/los_specs/5ESN/output_00101/target_LOS/los2/peak_finding/spectrum/'
-    write_spec(input_path,25)
+    #input_path = '/data/jwliang/projects_data/theory/spec/los_specs/5ESN/output_00101/target_LOS/los2/peak_finding/spectrum/'
+    input_path = '/data/jwliang/projects_data/theory/spec/los_specs/5ESN/output_00101/target_LOS/los1/spectrum/'
+    write_spec(input_path,40)
 
 if __name__ == '__main__':
     sys.exit(int(main() or 0))
