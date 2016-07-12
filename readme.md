@@ -57,3 +57,14 @@ mcmc_chain.npy 								# Output fname
 % C IV 14 10 0.0007
 
 % C II 13 31 0.0001
+
+
+------------------------------------------------------------------------------------------
+
+Features to be added/planned: 
+
+* Thermally link b parameters
+* Convolution with LSF
+
+
+
