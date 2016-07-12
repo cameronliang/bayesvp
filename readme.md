@@ -18,6 +18,7 @@ pip -U install KOMBINE
 Another useful sampler is the Goodman-Weare Affine Parameter Sampler. The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
 
 pip -U install emcee
+
 pip -U install triangle
 
 
