@@ -5,8 +5,6 @@ from observation import obs_spec
 from model import model_prediction,generic_prediction
 np.seterr(all='ignore')
 
-
-
 c = 299792.458
 
 def tophat_prior(model_x, x_left,x_right):
