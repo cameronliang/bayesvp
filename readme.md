@@ -3,40 +3,22 @@
 #   		(c) Cameron J. Liang
 #		    University of Chicago
 #     		jwliang@oddjob.uchicago.edu
-#       	MCMC VPFIT: A Full Bayesian Approach to Voigt Profile Fitting
+#       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
 ########################################################################################
-
-------------------------------------------------------------------------------------------
- 
- Copyright (C) 2016 Cameron J. Liang
- 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this 
-software and associated documentation files (the "Software"), to deal in the Software 
-without restriction, including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons 
-to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or 
-substantial portions of the Software.
-
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
-DEALINGS IN THE SOFTWARE.
-
-------------------------------------------------------------------------------------------
 
 
 MCMC VPFIT assumes standard Python libraries: numpy, scipy, matplotlib and pyfits. 
 I recommend installing the Enthought Canopy which comes with all the scientific 
 libraries you need. You can find it here: https://www.enthought.com/products/canopy/
 
-In addition, you will need an MCMC sampler. In Vogit profiles, usually we fit multiple components with many parameters, we will use the sampler KOMBINE; the easist way is to install is using pip:
+In addition, you will need an MCMC sampler. In Vogit profiles, usually we fit multiple components with many parameters, we will use the sampler KOMBINE developed by Ben Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
 
 pip -U install KOMBINE
+
+Another useful sampler is the Goodman-Weare Affine Parameter Sampler. The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
+
+pip -U install emcee
+pip -U install triangle
 
 
 ------------------------------------------------------------------------------------------
