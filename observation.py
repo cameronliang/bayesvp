@@ -43,6 +43,7 @@ class obs_data:
                 spec_fname_line = line
 
         spec_data_array = spec_fname_line.split(' ')
+        self.spec_short_fname = spec_data_array[1]
         self.spec_fname = self.spec_path + '/' + spec_data_array[1]
 
         # Select spectral range to fit
@@ -183,12 +184,13 @@ obs_spec.fitting_data()
 obs_spec.fitting_params()
 
 print('\n')
-print('Spec Path: %s'     % obs_spec.spec_path)
+print('Spectrum Path: %s'     % obs_spec.spec_path)
+print('Spectrum name: %s'     % obs_spec.spec_short_fname)
 print('Fitting:')
 for i in xrange(len(obs_spec.transitions_params_array)):
     for j in xrange(len(obs_spec.transitions_params_array[i])):
         print('   Transitions Wavelength: %f' % obs_spec.transitions_params_array[i][j][1])
 for i in xrange(len(obs_spec.wave_begins)):
     print('Selected data wavelegnth region: (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
-print('Output MCMC chain: %s' % obs_spec.chain_short_fname) 
+print('Output MCMC chain: %s.npy' % obs_spec.chain_short_fname) 
 print('\n')

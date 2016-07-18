@@ -87,7 +87,7 @@ def Voigt(b,z,nu,nu0,Gamma):
     
     prefactor = 1.0 / ((np.pi**0.5)*delta_nuD)
     x = delta_nu/delta_nuD
-    a = Gamma/delta_nuD/(4*np.pi)
+    a = Gamma/(4*np.pi*delta_nuD)
 
     return prefactor * voigt(x,a)  
 
