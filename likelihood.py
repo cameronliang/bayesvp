@@ -25,7 +25,7 @@ def lnlike(alpha):
     """
     # flux of the model
     model_flux = generic_prediction(alpha,obs_spec)
-
+    
     resid = obs_spec.flux - model_flux
     ln_likelihood = np.sum(0.5*np.log(2*np.pi*obs_spec.dflux**2)             -0.5*resid**2/obs_spec.dflux**2)
 
@@ -60,6 +60,7 @@ def lnprior(alpha):
 
 def lnprob(alpha):
     lp = lnprior(alpha)
+ 
     if np.isinf(lp):
         return -np.inf
     else:

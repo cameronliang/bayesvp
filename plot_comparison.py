@@ -11,7 +11,7 @@ def plot_spec():
     c = 299792.485
     burnin = 0.7 * obs_spec.nsteps
 
-    mcmc_chain = np.load(obs_spec.chain_fname)
+    mcmc_chain = np.load(obs_spec.chain_fname + '.npy')
 
     temp_flags = obs_spec.vp_params_flags[~np.isnan(obs_spec.vp_params_flags)]
     n_params = len(list(set(temp_flags)))
@@ -23,7 +23,8 @@ def plot_spec():
 
     model_flux = generic_prediction(alpha,obs_spec)
     # Use the first transition as the central wavelength
-    rest_wave = obs_spec.transitions_params_array[0][0][1]
+    # For now pick the 1st component, 1st wavelength region, 1st transiton's wavelength
+    rest_wave = obs_spec.transitions_params_array[0][0][0][1]
     obs_spec_dv = c*(obs_spec.wave - rest_wave) / rest_wave
 
     summary = raw_input('Write best fit summary? (y/n): ')
@@ -45,7 +46,8 @@ def plot_spec():
         pl.xlabel(r'$dv\,[\rm km/s]$')
         pl.ylabel(r'$\rm Normalized\,Flux$')
         pl.legend(loc=3)
-        pl.savefig(obs_spec.spec_path + '/vpfit_mcmc/bestfit_spec.pdf',bbox_inches='tight',dpi=100)
+        pl.show()
+        #pl.savefig(obs_spec.spec_path + '/vpfit_mcmc/bestfit_spec.pdf',bbox_inches='tight',dpi=100)
         print('Written %svpfit_mcmc/bestfit_spec.pdf\n' % obs_spec.spec_path)
     
     output_model = raw_input('Write best fit model spectrum? (y/n): ')

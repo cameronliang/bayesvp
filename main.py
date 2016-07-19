@@ -44,6 +44,7 @@ def run_kombine(output_fname):
 	p0 = create_walkers_init(obs_spec.vp_params,
 		 obs_spec.vp_params_type,obs_spec.vp_params_flags)
 	
+
 	ndim = np.shape(p0)[1]
 
 	# Set up the sampler
@@ -60,10 +61,6 @@ def run_kombine(output_fname):
 
 if __name__ == '__main__':
 
-
 	p0 = create_walkers_init(obs_spec.vp_params,obs_spec.vp_params_type,obs_spec.vp_params_flags)
 
 	run_kombine(obs_spec.chain_fname)
-
-
-

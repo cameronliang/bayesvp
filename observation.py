@@ -91,10 +91,10 @@ class obs_data:
                             (wave >= wave_start/(1+redshift)) & 
                             (wave < wave_end/(1+redshift)))[0]
             if len(inds) == 0:
-                return None
+                return np.array([np.nan,np.nan,np.nan,np.nan])
             else:
-                transitions_params_array = np.array([osc_f[inds],wave[inds],gamma[inds], mass[inds]])
-                return np.transpose(transitions_params_array)
+                return np.array([osc_f[inds],wave[inds],gamma[inds], mass[inds]]).T
+
         
         # Lines in config file that contain the component parameters
         # i.e atom, state, logN, b, z
@@ -107,7 +107,8 @@ class obs_data:
         logNs = []; bs = []; redshifts = []
         transitions_params_array = []
         guess_alpha = []
-        for line in component_lines:
+        for i in xrange(len(component_lines)):
+            line = component_lines[i]
             line = filter(None,line.split(' '))
             atom  = line[1]; state = line[2] # To obtain transition data
             logNs.append(line[3]); 
@@ -119,21 +120,18 @@ class obs_data:
             else:
                 temp_redshift = line[5]
 
-            for i in xrange(len(self.wave_begins)):
-                # Each component gets a set of all of the transitions data
-                temp_transitions_params = get_transitions_params(atom,state,self.wave_begins[i],self.wave_ends[i],float(temp_redshift))
-                if temp_transitions_params is not None:
-                    transitions_params_array.append(temp_transitions_params)
+            transitions_params_array.append([])
+            # Each component gets a set of all of the transitions data
+            for j in xrange(len(self.wave_begins)):
+                
+                # each wavelength regions gets all of the transitions
+                temp_params = get_transitions_params(atom,state,self.wave_begins[j],self.wave_ends[j],float(temp_redshift))
+                transitions_params_array[i].append(temp_params)
         
-        # Shape = (n_components,n_transitions,4)
-        # For each component, there is n_transitions within the wavelength 
-        # regime, and each transition has (wave0,f_jk,gamma,mass) properties.
- 
-        # A component is defined vaguely as number of sets of (logN, b, z)
-        # They also need to fall within range of specified wavelength (guessed z cannot be too large)
+        # Shape = (n_component,n_regions,n_transitions,4) 
         self.transitions_params_array = np.array(transitions_params_array)
         self.vp_params = np.array([logNs,bs,redshifts]).T
-        self.n_component = len(transitions_params_array)
+        self.n_component = len(component_lines) 
 
         # Define what kind of parameters to get walker initiazation ranges.
         # and for fixing and freeing paramters. 
@@ -175,7 +173,7 @@ class obs_data:
         self.vp_params_flags = np.array(flags)
 
 
-"""Global Object defined by the class"""
+"""Global Object defined by the config file"""
 # Command line argument - run time feed. e.g., python main.py full_path_to_config_file
 config_fname = sys.argv[1]
 obs_spec = obs_data(config_fname)
@@ -186,11 +184,16 @@ obs_spec.fitting_params()
 print('\n')
 print('Spectrum Path: %s'     % obs_spec.spec_path)
 print('Spectrum name: %s'     % obs_spec.spec_short_fname)
-print('Fitting:')
+print('Fitting %i components with transitions: ' % obs_spec.n_component)
 for i in xrange(len(obs_spec.transitions_params_array)):
     for j in xrange(len(obs_spec.transitions_params_array[i])):
-        print('   Transitions Wavelength: %f' % obs_spec.transitions_params_array[i][j][1])
+        if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
+            for k in xrange(len(obs_spec.transitions_params_array[i][j])):
+                rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
+                print('    Transitions Wavelength: %.3f' % rest_wavelength)
+
+print('Selected data wavelegnth region:')
 for i in xrange(len(obs_spec.wave_begins)):
-    print('Selected data wavelegnth region: (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
+    print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
 print('Output MCMC chain: %s.npy' % obs_spec.chain_short_fname) 
 print('\n')

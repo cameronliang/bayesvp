@@ -200,11 +200,13 @@ def generic_prediction(alpha,obs_spec_obj):
                 # access the index map from flags to alpha 
                 temp_alpha[j] = alpha[component_flags[i][j]] 
 
-        # For each component, there may exists more than one transitions
-        for k in xrange(np.atleast_1d(obs_spec_obj.transitions_params_array[i].shape[0])):
-            spec.append(General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k]))
-    
-    spec = np.array(spec)
+        n_wavelength_regions = len(obs_spec_obj.wave_begins) 
+        for k in xrange(n_wavelength_regions):
+            n_transitions = len(obs_spec_obj.transitions_params_array[i][k])
+            for l in xrange(n_transitions):
+                if not np.isnan(obs_spec_obj.transitions_params_array[i][k][l]).any():
+                    spec.append(General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])) 
+
     return np.product(spec,axis=0)
 
 if __name__ == '__main__':
@@ -212,7 +214,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as pl
     from observation import obs_spec
     
-    alpha = np.array([14,70,13,20]) 
+    alpha = np.array([15.,30,0]) 
     flux = generic_prediction(alpha,obs_spec.wave,        obs_spec.transitions_params_array)
     
     pl.plot(obs_spec.wave,flux)
