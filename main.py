@@ -44,13 +44,12 @@ def run_kombine(output_fname):
 	p0 = create_walkers_init(obs_spec.vp_params,
 		 obs_spec.vp_params_type,obs_spec.vp_params_flags)
 	
-
 	ndim = np.shape(p0)[1]
 
 	# Set up the sampler
 	print("Running MCMC...")
 	print("Number of parameters = %i" % ndim)
-	sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.threads)
+	sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
 
 	# First do a rough burn in based on accetance rate.
 	p_post_q = sampler.burnin(p0)

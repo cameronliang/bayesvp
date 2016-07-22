@@ -5,7 +5,7 @@ import sys,os,re
 class obs_data:
     """
     Read and define fitting parameters from 
-    config file  
+    config file
     """
     
     def __init__(self,config_fname):
@@ -21,6 +21,21 @@ class obs_data:
                 self.lines.append(line)    
 
     def fileio_mcmc_params(self):
+        """
+        Retrieve MCMC parameters from config file
+
+        Returns
+        --------
+        spec_path: path to spectrum;  
+        chain_fname: full path to the chain
+        nwalkers: int 
+            number of walkers
+        nsteps: int 
+            number of steps per walker
+        nthreads: int 
+            number of threads for parallelization
+        """
+
         # Paths and fname strings
         self.spec_path         = self.lines[0].rstrip()
         self.chain_short_fname = self.lines[1].rstrip()
@@ -33,11 +48,19 @@ class obs_data:
         # MCMC related
         self.nwalkers     = int(self.lines[2].rstrip().split(' ')[0])
         self.nsteps       = int(self.lines[2].rstrip().split(' ')[1])
-        self.threads      = int(self.lines[2].rstrip().split(' ')[2])
+        self.nthreads      = int(self.lines[2].rstrip().split(' ')[2])
  
 
     def fitting_data(self): 
-         
+        """
+        Get the spectral data specified by the config file
+        The spectrum file assumes three column of data with 
+        [wave,flux,error], in that order. 
+
+        Returns
+        ---------
+        wave, flux, error: array_like 
+        """
         for line in self.lines: 
             if re.search('%%',line):
                 spec_fname_line = line
@@ -75,6 +98,25 @@ class obs_data:
         self.dflux = dflux[all_inds]
 
     def fitting_params(self):
+        """
+        Get Voigt profile parameters of arbitary number of components
+        specified in the config file.
+
+        Uses './data/atom.dat' to read in atomic/transition data
+        [atom state rest_wavelength oscillator_strength damping_coeff mass_amu]
+        Users can add additional row to the file for new atomic data
+
+        Returns
+        --------
+        vp_params: array_like
+            vogit parameters 
+        transitions_params_array: 
+        
+        vp_params_flags
+        vp_params_type
+        self.n_component
+        """
+
         amu = 1.66053892e-24   # 1 atomic mass in grams
         data_file = './data/atom.dat'
         atoms  = np.loadtxt(data_file, dtype=str, usecols=[0])
@@ -172,6 +214,41 @@ class obs_data:
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
 
+    def spec_lsf(self):
+        """
+        Determine the LSF by specifying LSF filename with 
+        'database' directory under self.spec_path.    
+
+        Assumes LSF file contains only 1 column of data
+
+        lsf: array_like
+            Line spread function 
+        """
+
+        # Check if LSF is specified in config file
+        defined_lsf = False
+        for line in self.lines:
+            if re.search('lsf',line) or re.search('LSF',line):
+                lsf_line = line.split(' ')[1:]
+                defined_lsf = True
+                break
+
+        # Get the LSF function from directory 'database'
+        
+        if defined_lsf:
+            self.lsf = []
+            if len(lsf_line) == 1 or len(lsf_line) == len(self.wave_begins):
+                for lsf_fname in lsf_line:
+                    # assume lsf file has one column 
+                    fname = self.spec_path + '/database/' + lsf_fname
+                    self.lsf.append(np.loadtxt(fname))
+            else:
+                print('There should be 1 LSF or the number of wavelength regions')
+                exit()
+        else:
+            # Convolve with LSF = 1
+            self.lsf = 1.
+
 
 """Global Object defined by the config file"""
 # Command line argument - run time feed. e.g., python main.py full_path_to_config_file
@@ -180,6 +257,9 @@ obs_spec = obs_data(config_fname)
 obs_spec.fileio_mcmc_params()
 obs_spec.fitting_data()
 obs_spec.fitting_params()
+obs_spec.spec_lsf()
+
+print obs_spec.lsf
 
 print('\n')
 print('Spectrum Path: %s'     % obs_spec.spec_path)

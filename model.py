@@ -2,6 +2,10 @@ import sys, os
 import numpy as np
 from scipy.special import wofz
 
+from observation import obs_spec
+from utilities import convolve_lsf
+
+
 # Fundamental constant [cgs units]
 h  = 6.6260755e-27   # planck constants
 kB = 1.380658e-16    # Boltzmann constant
@@ -190,6 +194,7 @@ def generic_prediction(alpha,obs_spec_obj):
     spec = [] 
     for i in xrange(obs_spec_obj.n_component):
 
+        # Re-group parameters intro [logN, b,z] for each component
         temp_alpha = np.zeros(3)
         for j in xrange(3):
             # NaN indicates parameter has been fixed
@@ -200,6 +205,7 @@ def generic_prediction(alpha,obs_spec_obj):
                 # access the index map from flags to alpha 
                 temp_alpha[j] = alpha[component_flags[i][j]] 
 
+        # Compute spectrum for each component, region, and transition.
         n_wavelength_regions = len(obs_spec_obj.wave_begins) 
         for k in xrange(n_wavelength_regions):
             n_transitions = len(obs_spec_obj.transitions_params_array[i][k])
@@ -207,12 +213,14 @@ def generic_prediction(alpha,obs_spec_obj):
                 if not np.isnan(obs_spec_obj.transitions_params_array[i][k][l]).any():
                     spec.append(General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])) 
 
-    return np.product(spec,axis=0)
+    # Return the convolved model flux with LSF
+    return convolve_lsf(np.product(spec,axis=0),obs_spec.lsf)
+
 
 if __name__ == '__main__':
      
     import matplotlib.pyplot as pl
-    from observation import obs_spec
+    
     
     alpha = np.array([15.,30,0]) 
     flux = generic_prediction(alpha,obs_spec.wave,        obs_spec.transitions_params_array)
