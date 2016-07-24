@@ -30,7 +30,7 @@ def plot_spec():
     summary = raw_input('Write best fit summary? (y/n): ')
     if summary == 'y':
         output_summary_fname = obs_spec.spec_path + '/vpfit_mcmc/bestfits_summary.dat' 
-        write_mcmc_stats(obs_spec.chain_fname,output_summary_fname)
+        write_mcmc_stats(obs_spec.chain_fname + '.npy',output_summary_fname)
 
     plotting = raw_input('Plot model comparison? (y/n): ')
     if plotting == 'y':

@@ -234,16 +234,14 @@ class obs_data:
                 break
 
         # Get the LSF function from directory 'database'
-        
         if defined_lsf:
-            self.lsf = []
             if len(lsf_line) == 1 or len(lsf_line) == len(self.wave_begins):
                 for lsf_fname in lsf_line:
                     # assume lsf file has one column 
                     fname = self.spec_path + '/database/' + lsf_fname
-                    self.lsf.append(np.loadtxt(fname))
+                    self.lsf = np.loadtxt(fname)
             else:
-                print('There should be 1 LSF or the number of wavelength regions')
+                print('There should be 1 LSF or the number of wavelength regions; exit program.')
                 exit()
         else:
             # Convolve with LSF = 1
@@ -259,7 +257,11 @@ obs_spec.fitting_data()
 obs_spec.fitting_params()
 obs_spec.spec_lsf()
 
-print obs_spec.lsf
+print np.shape(obs_spec.lsf)
+
+#exit()
+
+
 
 print('\n')
 print('Spectrum Path: %s'     % obs_spec.spec_path)
