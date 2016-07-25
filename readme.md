@@ -46,7 +46,7 @@ Example config file format:
 
 /home/user_xxxx/tests 						# Path to spectrum
 
-mcmc_chain.npy 								# Output fname
+mcmc_chain  								# Output fname (without extension, will add .npy internally)
 
 200 1000 16 								# nwalkers, nsteps, nthreads
 
@@ -58,13 +58,13 @@ mcmc_chain.npy 								# Output fname
 
 % C II 13 31 0.0001
 
+lsf filename 							  	# Line Spread Function; Specfy keyword 'lsf' and filename; 
+
 
 ------------------------------------------------------------------------------------------
 
 Features to be added/planned: 
 
 * Thermally link b parameters
-* Convolution with LSF
-
-
-
+* Convergence (GR indicator)
+* Model comparisons; Automatically choose number of components to fit
