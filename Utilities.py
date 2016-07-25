@@ -1,5 +1,8 @@
 import numpy as np
 
+###############################################################################
+# Process chain
+###############################################################################
 def compute_stats(x):
 	xmed = np.median(x); xm = np.mean(x); xsd = np.std(x)
 	xcfl11 = np.percentile(x,16); xcfl12 = np.percentile(x,84)
@@ -41,4 +44,32 @@ def write_mcmc_stats(mcmc_chain_fname,output_fname):
 	f.close()
 	print('Written %s: ' % output_fname)
 
-	return 
+	return
+
+
+###############################################################################
+# Line Spread Function Related
+###############################################################################
+
+def gaussian_kernel(std):
+    var = std**2
+    size = 8*std +1 # this should gaurantee size to be odd.
+    x = np.linspace(-100,100,size)
+    norm = 1/(2*np.pi*var)
+    return norm*np.exp(-(x**2/(2*std**2)))
+
+def convolve_lsf(flux,lsf):
+    # convolve 1-flux to remove edge effects wihtout using padding
+    conv_flux = 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
+    return conv_flux
+
+
+
+###############################################################################
+# Convergence related
+###############################################################################
+
+
+def gr_indicator():
+	return 0
+

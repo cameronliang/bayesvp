@@ -4,26 +4,30 @@ import sys,os
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
-from observation import obs_spec
-    
-def extract_chain(mcmc_chain_fname,para_name):
-    
-    burnin_fraction_chain = 0.5
-    chain = np.load(mcmc_chain_fname)
-    burnin  = int(np.shape(chain)[0]*burnin_fraction_chain)
-    my_dict = {'logN':0, 'b':1,'z':2}
-    col_num = my_dict[para_name]
-    
-    # return 1D chain of parameter x . 
-    return chain[burnin:,:,col_num].flatten()
+from Config import obs_spec
 
 def derivative_cdf(x,y):
     dx=x[1:] - x[:-1]
     diff = (y[1:]-y[:-1]) /dx
     return diff
 
+def extract_chain(mcmc_chain_fname,para_name):
+    """
+    This assumes simple single component model
+    with parameter [logN, b, z]
+    """    
+    burnin_fraction_chain = 0.5
+    chain = np.load(mcmc_chain_fname)
+    burnin  = int(np.shape(chain)[0]*burnin_fraction_chain)
+    my_dict = {'logN':0, 'b':1,'z':2}
+    col_num = my_dict[para_name]
+    
+    # return 1D chain of parameter x 
+    return chain[burnin:,:,col_num].flatten()
+
 def truncated_pdf(x,pdf,x_stepsize,left_boundary_x,right_boundary_x):
-    """ Smoothing of the CDF can create negative 
+    """ 
+    Smoothing of the CDF can create negative 
     derivative of CDF (e.g., PDF); Chop off the ends 
     where it becomes negative probability 
     """
@@ -59,7 +63,7 @@ def truncated_pdf(x,pdf,x_stepsize,left_boundary_x,right_boundary_x):
     entered_left_condition = False
     if min_x > left_boundary_x:
 
-        # equation of a line with +1 slope going down to the left.
+        # equation of a line with +10 slope going down to the left.
         left_added_x = np.arange(left_boundary_x,min_x,x_stepsize) 
         m = 10; b = log_pdf[0] - m*min_x
         left_pdf = m*left_added_x + b 
@@ -72,19 +76,19 @@ def truncated_pdf(x,pdf,x_stepsize,left_boundary_x,right_boundary_x):
     
     if max_x < right_boundary_x:
         
-        # equation of a line with +1 slope going down to the left.
+        # Equation of a line with -10 slope going down to the right.
         right_added_x = np.arange(max_x,right_boundary_x,x_stepsize)
         m = -10; b = log_pdf[-1] - m*max_x
         right_pdf = m*right_added_x + b
         
-        # in case new_x is not defined yet if not entered previous condition
+        # In case new_x is not defined yet if not entered previous condition
         if entered_left_condition:
             new_x = np.concatenate((new_x,right_added_x))
         else:
             new_x = np.concatenate((x,right_added_x))
         log_pdf = np.concatenate((log_pdf,right_pdf))        
 
-    #normalize the pdf
+    # Normalize the pdf
     log_pdf = np.log10(10**log_pdf/np.linalg.norm(10**log_pdf))
     return new_x, log_pdf
 
@@ -92,6 +96,7 @@ def truncated_pdf(x,pdf,x_stepsize,left_boundary_x,right_boundary_x):
 
 def smooth_cdf_deriv_pdf(x,left_boundary_x,right_boundary_x, plot_path,ion_name,    plotting=False):
     """
+    # Only tested on logN. 
     1. Create unbinned CDF
     2. Get only those CDF that is not zero or one. 
     3. Intepolate the CDF
@@ -136,6 +141,7 @@ def smooth_cdf_deriv_pdf(x,left_boundary_x,right_boundary_x, plot_path,ion_name,
     return new_x,new_pdf
 
 def write_pdf(x,pdf,output_path,x_name,ion_name):
+    """Write to file for the property of the specific ion"""
 
     fname = output_path + '/' + x_name + '_' + ion_name + '.dat'
     f = open(fname,'w')
@@ -145,6 +151,8 @@ def write_pdf(x,pdf,output_path,x_name,ion_name):
     f.close()
 
 def main():
+    """Extract column density PDF"""
+
     ion_name = raw_input('Ion name = ')
     x_name = 'logN';
     left_boundary_x = 0; right_boundary_x = 22 

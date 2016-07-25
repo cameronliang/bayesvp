@@ -2,7 +2,7 @@ import numpy as np
 import time
 import sys,os
 
-from observation import obs_spec
+from Config import obs_spec
 
 def walkers_init():
 	fname = './data/walkers_init.dat'
@@ -37,7 +37,7 @@ def create_walkers_init(vp_params,vp_params_type,flags):
 	return np.transpose(p0)
 
 def run_kombine(output_fname):
-	from likelihood import lnprob
+	from Likelihood import lnprob
 	import kombine
 
 	# define the MCMC parameters.
