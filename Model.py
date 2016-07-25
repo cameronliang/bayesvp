@@ -2,8 +2,8 @@ import sys, os
 import numpy as np
 from scipy.special import wofz
 
-from observation import obs_spec
-from utilities import convolve_lsf
+from Config import obs_spec
+from Utilities import convolve_lsf
 
 
 # Fundamental constant [cgs units]
