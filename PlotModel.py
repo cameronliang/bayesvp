@@ -2,11 +2,10 @@ import numpy as np
 import pylab as pl
 import sys
 
-from Config import obs_spec
 from Model import generic_prediction, ReadTransitionData
 from Utilities import read_mcmc_fits, write_mcmc_stats
 
-def plot_spec():
+def plot_spec(obs_spec):
     c = 299792.485
     burnin = 0.5 * obs_spec.nsteps
 
@@ -56,8 +55,16 @@ def plot_spec():
                 header='wave\tdv\tflux\terror\tmodel')
         print('Written %svpfit_mcmc/bestfit_model.dat\n' % obs_spec.spec_path)
 
-def main():
-    plot_spec()
+def main(config_fname):
+    from Config import obs_data
+    obs_spec = obs_data(config_fname)
+    obs_spec.fileio_mcmc_params()
+    obs_spec.fitting_data()
+    obs_spec.fitting_params()
+    obs_spec.spec_lsf()
+
+    plot_spec(obs_spec)
 
 if __name__ == '__main__':
-    sys.exit(int(main() or 0))
+    config_fname = sys.argv[1]
+    sys.exit(int(main(config_fname) or 0))

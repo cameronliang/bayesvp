@@ -2,6 +2,7 @@ import numpy as np
 import pylab as pl
 import sys,os,re 
 
+
 class obs_data:
     """
     Read and define fitting parameters from 
@@ -246,36 +247,3 @@ class obs_data:
         else:
             # Convolve with LSF = 1
             self.lsf = 1.
-
-
-"""Global Object defined by the config file"""
-# Command line argument - run time feed. e.g., python main.py full_path_to_config_file
-config_fname = sys.argv[1]
-obs_spec = obs_data(config_fname)
-obs_spec.fileio_mcmc_params()
-obs_spec.fitting_data()
-obs_spec.fitting_params()
-obs_spec.spec_lsf()
-
-print np.shape(obs_spec.lsf)
-
-#exit()
-
-
-
-print('\n')
-print('Spectrum Path: %s'     % obs_spec.spec_path)
-print('Spectrum name: %s'     % obs_spec.spec_short_fname)
-print('Fitting %i components with transitions: ' % obs_spec.n_component)
-for i in xrange(len(obs_spec.transitions_params_array)):
-    for j in xrange(len(obs_spec.transitions_params_array[i])):
-        if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
-            for k in xrange(len(obs_spec.transitions_params_array[i][j])):
-                rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
-                print('    Transitions Wavelength: %.3f' % rest_wavelength)
-
-print('Selected data wavelegnth region:')
-for i in xrange(len(obs_spec.wave_begins)):
-    print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i]))
-print('Output MCMC chain: %s.npy' % obs_spec.chain_short_fname) 
-print('\n')

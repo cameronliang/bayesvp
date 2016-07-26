@@ -1,4 +1,9 @@
 import numpy as np
+import re
+###############################################################################
+# Bayesian Evidence / BIC / AIC  
+###############################################################################
+
 
 ###############################################################################
 # Process chain
@@ -48,7 +53,7 @@ def write_mcmc_stats(mcmc_chain_fname,output_fname):
 
 
 ###############################################################################
-# Line Spread Function Related
+# Line Spread Function 
 ###############################################################################
 
 def gaussian_kernel(std):
@@ -66,10 +71,81 @@ def convolve_lsf(flux,lsf):
 
 
 ###############################################################################
-# Convergence related
+# Convergence 
 ###############################################################################
 
 
 def gr_indicator():
+	"""
+	Gelman-Rubin Indicator 
+	"""
 	return 0
+
+
+
+
+###############################################################################
+# Others
+###############################################################################
+
+def determine_autovp(config_fname):
+    
+	# Read and filter empty lines
+	all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
+
+	normal_lines = []   # all lines except line with '!'
+	component_line = [] # lines with one '%'
+	auto_vp = False; n_component_max = 0
+	for line in all_lines:
+		if line.startswith('!'): 
+			if re.search('auto', line) or re.search('AUTO', line): 
+				line = line.split(' ')
+				n_component_max = int(line[2])
+				auto_vp = True
+
+		elif re.search('%',line):
+			if line.split(' ')[0] == '%':
+				component_line.append(line)
+			else:
+				normal_lines.append(line)
+		else:
+			normal_lines.append(line)
+
+	def replicate_config(config_fname,normal_lines, 
+						component_line,n_component):
+		
+		# Find ind of the extention
+		dot_index =  config_fname.find('.')
+		new_config_fname = (config_fname[:dot_index] + str(n_component)
+							 + config_fname[dot_index:])
+		f = open(new_config_fname,'w')
+		for line in normal_lines:
+			f.write(line); f.write('\n')
+		for line in component_line:
+			for n in xrange(1,n_component+1):
+				f.write(line); f.write('\n')
+		f.close()
+
+	for n in xrange(1,n_component_max+1):
+		replicate_config(config_fname,normal_lines,component_line,n)
+	return auto_vp, n_component_max
+
+def print_config_params(obs_spec):
+
+    print('\n')
+    print('Spectrum Path: %s'     % obs_spec.spec_path)
+    print('Spectrum name: %s'     % obs_spec.spec_short_fname)
+    print('Fitting %i components with transitions: ' % obs_spec.n_component)
+    for i in xrange(len(obs_spec.transitions_params_array)):
+        for j in xrange(len(obs_spec.transitions_params_array[i])):
+            if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
+                for k in xrange(len(obs_spec.transitions_params_array[i][j])):
+                    rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
+                    print('    Transitions Wavelength: %.3f' % rest_wavelength)
+
+    print('Selected data wavelegnth region:')
+    for i in xrange(len(obs_spec.wave_begins)):
+        print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i])) 
+    print('\n')
+
 

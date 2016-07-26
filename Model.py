@@ -2,7 +2,6 @@ import sys, os
 import numpy as np
 from scipy.special import wofz
 
-from Config import obs_spec
 from Utilities import convolve_lsf
 
 
@@ -214,7 +213,7 @@ def generic_prediction(alpha,obs_spec_obj):
                     spec.append(General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])) 
 
     # Return the convolved model flux with LSF
-    return convolve_lsf(np.product(spec,axis=0),obs_spec.lsf)
+    return convolve_lsf(np.product(spec,axis=0),obs_spec_obj.lsf)
 
 
 if __name__ == '__main__':
