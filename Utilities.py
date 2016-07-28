@@ -1,9 +1,59 @@
 import numpy as np
 import re
+from sklearn.neighbors import KernelDensity
+from sklearn.grid_search import GridSearchCV
+
 ###############################################################################
-# Bayesian Evidence / BIC / AIC  
+# Model Comparisons: Bayesian Evidence / BIC / AIC  
 ###############################################################################
 
+def BIC_gaussian_kernel(chain_fname,data_length):
+	"""
+	Bayesian information criterion
+	Only valid if data_length >> n_params
+
+	# Note that bandwidth of kernel is set to 1 universally
+	"""
+	chain = np.load(chain_fname + '.npy')
+	n_params = np.shape(chain)[-1]
+	samples = np.transpose(chain.reshape((-1,n_params)))
+	kde = KernelDensity(kernel='gaussian',bandwidth=1).fit(samples)
+
+	# Best fit = medians of the distribution
+	medians = np.median(samples,axis=0) # shape = (n_params,)
+	medians = medians.reshape(1,-1) 	# Reshape to (1,n_params)
+	
+	log10_L = float(kde.score_samples(medians)) 
+	lnL = log10_L /np.log10(2.7182818)
+	 
+	return -2*lnL + n_params*np.log(data_length)
+
+
+def BIC_best_estimator(chain_fname,data_length):
+	"""
+	Bayesian information criterion
+	Only valid if data_length >> n_params
+	"""
+	chain = np.load(chain_fname + '.npy')
+	n_params = np.shape(chain)[-1]
+	samples = np.transpose(chain.reshape((-1,n_params)))
+
+	# Grid search cross-validation to optimize the bandwidth
+	params = {'bandwidth': np.logspace(-2, 2, 20)}
+	grid = GridSearchCV(KernelDensity(), params, cv=2)
+	grid.fit(samples)
+
+	# Use the best estimator determined by learning in sample
+	kde = grid.best_estimator_
+
+	# Best fit = medians of the distribution
+	medians = np.median(samples,axis=0) # shape = (n_params,)
+	medians = medians.reshape(1,-1) 	# Reshape to (1,n_params)
+
+	log10_L = float(kde.score_samples(medians)) 
+	lnL = log10_L /np.log10(2.7182818)
+
+	return -2*lnL + n_params*np.log(data_length)
 
 ###############################################################################
 # Process chain
@@ -88,6 +138,9 @@ def gr_indicator():
 # Others
 ###############################################################################
 
+def printline():
+	print("-------------------------------------------------------------------")
+
 def determine_autovp(config_fname):
     
 	# Read and filter empty lines
@@ -147,5 +200,4 @@ def print_config_params(obs_spec):
     for i in xrange(len(obs_spec.wave_begins)):
         print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i])) 
     print('\n')
-
 

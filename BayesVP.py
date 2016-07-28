@@ -2,7 +2,9 @@ import numpy as np
 import time
 import sys,os
 
-from Utilities import determine_autovp, print_config_params
+from Utilities import determine_autovp, print_config_params,\
+					BIC_gaussian_kernel,BIC_best_estimator,\
+					printline
 
 def walkers_init():
 	fname = './data/walkers_init.dat'
@@ -51,9 +53,6 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 	p0 = create_walkers_init(obs_spec)
 	ndim = np.shape(p0)[1]
 
-	print("Running MCMC...")
-	print("Number of parameters = %i" % ndim)
-
 	# Define the natural log of the posterior 
 	lnprob = posterior(obs_spec)
 
@@ -65,8 +64,8 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 	p_post_q = sampler.run_mcmc(obs_spec.nsteps)
 	
 	np.save(chain_filename_ncomp + '.npy', sampler.chain)
-	print("Written chain: %s.npy" % obs_spec.chain_fname)
-
+	print("Written chain: %s.npy\n" % chain_filename_ncomp)
+	printline()
 
 def main(config_fname):
 	"""
@@ -75,18 +74,21 @@ def main(config_fname):
 	multiple similar to CLOUDY 
 	"""
 
+	# Determine if config is set to autovp 
+	# If so, create multiple configs file specified by n_component_max
 	auto_vp, n_component_max = determine_autovp(config_fname)
 
 	if auto_vp:
 		bic = np.zeros(n_component_max)
 
-		for n in xrange(1,n_component_max+1):
-			print('Trying %d components.. ' % n)
-			# Load new config filename; 
+		for n in xrange(n_component_max):
+			print('Fitting %d components.. ' % (n + 1))
+			# Get new config filename; 
 			dot_index =  config_fname.find('.')
-			config_fname_ncomp = (config_fname[:dot_index] + str(n)
+			config_fname_ncomp = (config_fname[:dot_index] + str(n+1)
 							 + config_fname[dot_index:])
 
+			
 			# Load config parameter object 
 			obs_spec = obs_data(config_fname_ncomp)
 			obs_spec.fileio_mcmc_params()
@@ -96,15 +98,18 @@ def main(config_fname):
 
 			print_config_params(obs_spec)
 			# Ouput filename for chain
-			chain_filename_ncomp = obs_spec.chain_fname +  str(n)
+			chain_filename_ncomp = obs_spec.chain_fname +  str(n+1)			
 			run_kombine_mcmc(obs_spec,chain_filename_ncomp)
+			
+			# Input the chian filename and number of data points
+			bic[n] = BIC_best_estimator(chain_filename_ncomp,len(obs_spec.flux))
 
 			# compare with the previous fit 
-			#if n >= 1:
-			#	bic[n] = BIC(obs_spec.chain_fname)
-			#	if bic[n] <= bic[n-1]:
-					# determine which one to delete and which one remains. 
-			#		break
+			if n >= 1:
+				# Stop fitting the previous bic is smaller (i.e better) 
+				if bic[n-1] <= bic[n]:
+					print("Based on BIC, %d component model is the best fit." % (n))					 
+					break
 
 	else:
 		# Load config parameter object 
@@ -121,7 +126,6 @@ def main(config_fname):
 
 if __name__ == '__main__':
 
-	
 	from Config import obs_data
 	config_fname = sys.argv[1]
 	main(config_fname)
