@@ -192,7 +192,6 @@ def generic_prediction(alpha,obs_spec_obj):
 
     spec = [] 
     for i in xrange(obs_spec_obj.n_component):
-
         # Re-group parameters intro [logN, b,z] for each component
         temp_alpha = np.zeros(3)
         for j in xrange(3):
@@ -204,9 +203,11 @@ def generic_prediction(alpha,obs_spec_obj):
                 # access the index map from flags to alpha 
                 temp_alpha[j] = alpha[component_flags[i][j]] 
 
+
         # Compute spectrum for each component, region, and transition.
-        n_wavelength_regions = len(obs_spec_obj.wave_begins) 
-        for k in xrange(n_wavelength_regions):
+        n_wavelength_regions = len(obs_spec_obj.wave_begins)
+ 
+        for k in xrange(n_wavelength_regions):  
             n_transitions = len(obs_spec_obj.transitions_params_array[i][k])
             for l in xrange(n_transitions):
                 if not np.isnan(obs_spec_obj.transitions_params_array[i][k][l]).any():
@@ -219,10 +220,19 @@ def generic_prediction(alpha,obs_spec_obj):
 if __name__ == '__main__':
      
     import matplotlib.pyplot as pl
+    import sys
+
+    from Config import obs_data
+
+    config_fname = sys.argv[1]
+    obs_spec = obs_data(config_fname)
+    obs_spec.fileio_mcmc_params()
+    obs_spec.fitting_data()
+    obs_spec.fitting_params()
+    obs_spec.spec_lsf()
     
-    
-    alpha = np.array([15.,30,0]) 
-    flux = generic_prediction(alpha,obs_spec.wave,        obs_spec.transitions_params_array)
+    alpha = np.array([15.,30,0.059]) 
+    flux = generic_prediction(alpha,obs_spec)
     
     pl.plot(obs_spec.wave,flux)
     pl.ylim([0,1.4])

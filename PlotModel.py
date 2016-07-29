@@ -17,10 +17,7 @@ def plot_spec(obs_spec):
     samples = mcmc_chain[burnin:, :, :].reshape((-1, n_params))
     alpha = np.median(samples,axis=0)
 
-    model_flux = generic_prediction(alpha,obs_spec)
-    # Use the first transition as the central wavelength
-    rest_wave = obs_spec.transitions_params_array[0][0][0][1]
-    obs_spec_dv = c*(obs_spec.wave - rest_wave) / rest_wave
+    model_flux = generic_prediction(alpha,obs_spec)    
 
     # Write best fit parameters summary file
     summary = raw_input('Write best fit summary? (y/n): ')
@@ -31,6 +28,17 @@ def plot_spec(obs_spec):
     # Plot the best fit for visual comparison
     plotting = raw_input('Plot model comparison? (y/n): ')
     if plotting == 'y':
+        rest_wave = raw_input('Enter a central wavelength or hit enter to use default wavelength: ')
+        if rest_wave == "":
+            # Use the first transition as the central wavelength
+            rest_wave = obs_spec.transitions_params_array[0][0][0][1]
+        else:
+             rest_wave = float(rest_wave)
+        redshift = float(raw_input('System redshift = '))
+        dv = float(raw_input('Enter velocity range: '))
+
+        obs_spec_wave = obs_spec.wave / (1+redshift) 
+        obs_spec_dv = c*(obs_spec_wave - rest_wave) / rest_wave
         pl.rc('text', usetex=True)
         pl.step(obs_spec_dv,obs_spec.flux,'k',label=r'$\rm Data$')
         pl.step(obs_spec_dv,model_flux,'b',lw=2,label=r'$\rm Best\,Fit$')
@@ -38,7 +46,6 @@ def plot_spec(obs_spec):
         pl.axhline(1,ls='--',c='g',lw=1.2)
         pl.axhline(0,ls='--',c='g',lw=1.2)
         pl.ylim([-0.1,1.4])
-        dv = float(raw_input('Enter velocity range: '))
         pl.xlim([-dv,dv])
         pl.xlabel(r'$dv\,[\rm km/s]$')
         pl.ylabel(r'$\rm Normalized\,Flux$')

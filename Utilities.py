@@ -55,9 +55,11 @@ def BIC_best_estimator(chain_fname,data_length):
 
 	return -2*lnL + n_params*np.log(data_length)
 
+
 ###############################################################################
 # Process chain
 ###############################################################################
+
 def compute_stats(x):
 	xmed = np.median(x); xm = np.mean(x); xsd = np.std(x)
 	xcfl11 = np.percentile(x,16); xcfl12 = np.percentile(x,84)
@@ -115,8 +117,8 @@ def gaussian_kernel(std):
 
 def convolve_lsf(flux,lsf):
     # convolve 1-flux to remove edge effects wihtout using padding
-    conv_flux = 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
-    return conv_flux
+	conv_flux = 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
+	return conv_flux
 
 
 
@@ -166,11 +168,10 @@ def determine_autovp(config_fname):
 
 	def replicate_config(config_fname,normal_lines, 
 						component_line,n_component):
-		
-		# Find ind of the extention
-		dot_index =  config_fname.find('.')
-		new_config_fname = (config_fname[:dot_index] + str(n_component)
-							 + config_fname[dot_index:])
+
+		# Assume file extension has .dat or .txt 
+		new_config_fname = (config_fname[:-4] + str(n_component)
+							 + config_fname[-4:])
 		f = open(new_config_fname,'w')
 		for line in normal_lines:
 			f.write(line); f.write('\n')

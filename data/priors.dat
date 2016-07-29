@@ -1,3 +1,3 @@
 logN 0 23
 b    0 100
-z    0 50  # mean_z and spread_in_dv
+z    0.059 1000  # mean_z and spread_in_dv

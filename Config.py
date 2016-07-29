@@ -87,16 +87,24 @@ class obs_data:
 
         wave,flux,dflux = np.loadtxt(self.spec_fname,
                                      unpack=True,usecols=[0,1,2])
-
+        
+        # Select regions of interests 
         all_inds = []
         for i in range(len(self.wave_begins)):
             inds = np.where((wave>=self.wave_begins[i]) & (wave<self.wave_ends[i]))[0]
             all_inds.append(inds)
 
         all_inds   = np.hstack(np.array(all_inds))
-        self.wave  = wave[all_inds]
-        self.flux  = flux[all_inds]
-        self.dflux = dflux[all_inds]
+        wave = wave[all_inds]; flux = flux[all_inds]; dflux = dflux[all_inds]
+        
+        # Remove NaN pixels in flux
+        inds = np.where((~np.isnan(flux)))
+        self.wave = wave[inds]; self.flux = flux[inds]; self.dflux = dflux[inds]
+
+        # Set negative pixels in flux and error 
+        inds = np.where((self.flux < 0)); self.flux[inds] = 0; 
+        inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
+         
 
     def fitting_params(self):
         """
@@ -111,8 +119,7 @@ class obs_data:
         --------
         vp_params: array_like
             vogit parameters 
-        transitions_params_array: 
-        
+        transitions_params_array: array_like 
         vp_params_flags
         vp_params_type
         self.n_component
@@ -209,9 +216,8 @@ class obs_data:
             else:
                 for index in inds:
                     flags[index] = None
-            
-        # Walkers initialization will use these to create the parameters
-        # Model will use these to correctly construct sets of (logN, b, z) for each component
+
+        # Model uses these to correctly construct sets of (logN, b, z) for each component
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
 

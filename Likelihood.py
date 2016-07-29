@@ -69,7 +69,7 @@ class posterior(object):
         posterior distribution
         """
         lp = self.lnprior(alpha)
-    
+
         if np.isinf(lp):
             return -np.inf
         else:

@@ -51,6 +51,7 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 
 	# define the MCMC parameters.
 	p0 = create_walkers_init(obs_spec)
+
 	ndim = np.shape(p0)[1]
 
 	# Define the natural log of the posterior 
@@ -83,12 +84,11 @@ def main(config_fname):
 
 		for n in xrange(n_component_max):
 			print('Fitting %d components.. ' % (n + 1))
-			# Get new config filename; 
-			dot_index =  config_fname.find('.')
-			config_fname_ncomp = (config_fname[:dot_index] + str(n+1)
-							 + config_fname[dot_index:])
-
 			
+			# Get new config filename; 
+			config_fname_ncomp = (config_fname[:-4] + str(n+1)
+								+ config_fname[-4:])
+
 			# Load config parameter object 
 			obs_spec = obs_data(config_fname_ncomp)
 			obs_spec.fileio_mcmc_params()
