@@ -44,11 +44,11 @@ Example config file format:
 
 ! another type of comment 					# Comment 
 
-/home/user_xxxx/tests 						# Path to spectrum
+spec_path /home/user_xxxx/tests 						# Path to spectrum
 
-mcmc_chain  								# Output fname (without extension, will add .npy internally)
+output mcmc_chain  								# Output fname (without extension, will add .npy internally)
 
-200 1000 16 								# nwalkers, nsteps, nthreads
+mcmc 200 1000 16 								# nwalkers, nsteps, nthreads
 
 %% uv_qso_5.spec 1546.8 1552.2 1333.5 1335  # spectrum_fname, [wave_start,wave_end], [..., ...], etc
 

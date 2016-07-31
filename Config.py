@@ -29,27 +29,30 @@ class obs_data:
         --------
         spec_path: path to spectrum;  
         chain_fname: full path to the chain
-        nwalkers: int 
+        nwalkers: int
             number of walkers
-        nsteps: int 
+        nsteps: int
             number of steps per walker
-        nthreads: int 
+        nthreads: int
             number of threads for parallelization
         """
 
         # Paths and fname strings
-        self.spec_path         = self.lines[0].rstrip()
-        self.chain_short_fname = self.lines[1].rstrip()
+        for line in self.lines:
+            line = filter(None,line.split(' '))
+            if 'spec_path' in line:
+                self.spec_path = line[1]
+            elif 'output' in line:
+                self.chain_short_fname = line[1]
+            elif 'mcmc' in line:
+                self.nwalkers = int(line[1])
+                self.nsteps = int(line[2])
+                self.nthreads = int(line[3])
 
         self.mcmc_outputpath   = self.spec_path + '/vpfit_mcmc'
         if not os.path.isdir(self.mcmc_outputpath):
 		    os.mkdir(self.mcmc_outputpath)
         self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
-
-        # MCMC related
-        self.nwalkers     = int(self.lines[2].rstrip().split(' ')[0])
-        self.nsteps       = int(self.lines[2].rstrip().split(' ')[1])
-        self.nthreads      = int(self.lines[2].rstrip().split(' ')[2])
  
     def fitting_data(self): 
         """
@@ -68,7 +71,6 @@ class obs_data:
         spec_data_array = spec_fname_line.split(' ')
         self.spec_short_fname = spec_data_array[1]
         self.spec_fname = self.spec_path + '/' + spec_data_array[1]
-
 
 
         # Select spectral range to fit
