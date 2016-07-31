@@ -51,7 +51,6 @@ class obs_data:
         self.nsteps       = int(self.lines[2].rstrip().split(' ')[1])
         self.nthreads      = int(self.lines[2].rstrip().split(' ')[2])
  
-
     def fitting_data(self): 
         """
         Get the spectral data specified by the config file
@@ -70,8 +69,9 @@ class obs_data:
         self.spec_short_fname = spec_data_array[1]
         self.spec_fname = self.spec_path + '/' + spec_data_array[1]
 
+
+
         # Select spectral range to fit
-        wavelength_sections = []
         if len(spec_data_array[2:]) % 2 != 0:
             print('There is odd number of wavelengths entered in config file')
             print('Exiting program...')
@@ -104,7 +104,8 @@ class obs_data:
         # Set negative pixels in flux and error 
         inds = np.where((self.flux < 0)); self.flux[inds] = 0; 
         inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
-         
+
+
 
     def fitting_params(self):
         """
@@ -145,7 +146,6 @@ class obs_data:
             else:
                 return np.array([osc_f[inds],wave[inds],gamma[inds], mass[inds]]).T
 
-        
         # Lines in config file that contain the component parameters
         # i.e atom, state, logN, b, z
         component_lines = []
@@ -154,12 +154,14 @@ class obs_data:
                 component_lines.append(line)
         component_lines = component_lines[1:] 
 
+
         logNs = []; bs = []; redshifts = []
         transitions_params_array = []
         guess_alpha = []
         for i in xrange(len(component_lines)):
             line = component_lines[i]
             line = filter(None,line.split(' '))
+
             atom  = line[1]; state = line[2] # To obtain transition data
             logNs.append(line[3]); 
             bs.append(line[4]);
@@ -182,6 +184,7 @@ class obs_data:
         self.transitions_params_array = np.array(transitions_params_array)
         self.vp_params = np.array([logNs,bs,redshifts]).T
         self.n_component = len(component_lines) 
+
 
         # Define what kind of parameters to get walker initiazation ranges.
         # and for fixing and freeing paramters. 
@@ -221,6 +224,7 @@ class obs_data:
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
 
+
     def spec_lsf(self):
         """
         Determine the LSF by specifying LSF filename with 
@@ -253,3 +257,27 @@ class obs_data:
         else:
             # Convolve with LSF = 1
             self.lsf = 1.
+
+
+    def priors_and_init(self):
+        """
+        Read priors and use them for walker 
+        initialization 
+
+        format in config file:
+        logN min_logN max_logN
+        b    min_b    max_b
+        z    mean_z   dv <----- range defined by range of velocity [km/s] 
+        
+        For redshift: mean_redshift dv 
+        """
+        self.priors = np.zeros((3,2))
+        for line in self.lines:
+            line = np.array(line.split(' '))
+            line = filter(None,line)
+            if 'logN' in line:
+                self.priors[0] = [float(line[1]),float(line[2])]
+            if 'b' in line:
+                self.priors[1] = [float(line[1]),float(line[2])]
+            if 'z' in line:
+                self.priors[2] = [float(line[1]),float(line[2])]

@@ -1,14 +1,8 @@
 import numpy as np
 import pylab as pl
 
-
-from Model import model_prediction,generic_prediction
-
+from Model import generic_prediction
 np.seterr(all='ignore')
-
-# Read in hardwired priors
-priors = np.transpose(np.loadtxt('./data/priors.dat',
-         unpack=True,usecols=[1,2]))
 
 def tophat_prior(model_x, x_left,x_right):
 	if model_x >= x_left and model_x < x_right:
@@ -22,8 +16,15 @@ class posterior(object):
         self.obs_spec = obs_spec
 
     def lnlike(self,alpha):
-        """Likelihood assumes flux follow a Gaussian"""
+        """
+        Likelihood assumes flux follow a Gaussian
         
+        Returns
+        --------
+        ln_likelihood: float
+            Natural log of the likelihood
+        """
+
         # Flux of the model
         model_flux = generic_prediction(alpha,self.obs_spec)
         
@@ -41,6 +42,15 @@ class posterior(object):
         # speed of light [km/s]
         c = 299792.458
         
+        min_logN = self.obs_spec.priors[0][0] 
+        max_logN = self.obs_spec.priors[0][1] 
+
+        min_b = self.obs_spec.priors[1][0] 
+        max_b = self.obs_spec.priors[1][1]
+
+        mean_z = self.obs_spec.priors[2][0] 
+        dv = self.obs_spec.priors[2][1]
+
         final_vp_params_type = self.obs_spec.vp_params_type[~np.isnan(self.obs_spec.vp_params_flags)]
 
         sum_logN_prior = 0; sum_b_prior = 0; sum_z_prior = 0;
@@ -48,30 +58,33 @@ class posterior(object):
         model_redshifts = []
         for i in range(len(alpha)):
             if final_vp_params_type[i] == 'logN':
-                sum_logN_prior += tophat_prior(alpha[i],priors[0][0],priors[0][1])
+                sum_logN_prior += tophat_prior(alpha[i],min_logN,max_logN)
             elif final_vp_params_type[i] == 'b':
-                sum_b_prior += tophat_prior(alpha[i],priors[1][0],priors[1][1])
+                sum_b_prior += tophat_prior(alpha[i],min_b, max_b)
             elif final_vp_params_type[i] == 'z':
                 model_redshifts.append(alpha[i])
-                sum_z_prior += tophat_prior(alpha[i],priors[2][0]-priors[2][1]/c,priors[2][0] + priors[2][1]/c)
+                sum_z_prior += tophat_prior(alpha[i],mean_z-dv/c,mean_z+dv/c)
         
         # Make sure multiple components do not swap
         model_redshifts = np.array(model_redshifts)
         if not all(sorted(model_redshifts) == model_redshifts):
             sum_z_prior = -np.inf 
 
-        return sum_logN_prior + sum_b_prior + sum_z_prior
 
+        return sum_logN_prior + sum_b_prior + sum_z_prior
 
     def __call__(self,alpha):
         """
-        return lnprob
-        posterior distribution
+        Posterior distribution
+
+        Returns
+        ---------
+        lnprob: float
+            Natural log of posterior probability
         """
         lp = self.lnprior(alpha)
-
+        
         if np.isinf(lp):
             return -np.inf
         else:
             return np.atleast_1d(lp + self.lnlike(alpha))[0]
-

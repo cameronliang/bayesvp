@@ -1,9 +1,9 @@
 import sys, os
 import numpy as np
 from scipy.special import wofz
+import pylab as pl
 
 from Utilities import convolve_lsf
-
 
 # Fundamental constant [cgs units]
 h  = 6.6260755e-27   # planck constants

@@ -6,11 +6,6 @@ from Utilities import determine_autovp, print_config_params,\
 					BIC_gaussian_kernel,BIC_best_estimator,\
 					printline
 
-def walkers_init():
-	fname = './data/walkers_init.dat'
-	init_ranges = np.loadtxt(fname,unpack=True,usecols=[1,2])
-	return np.transpose(init_ranges)
-
 def create_walkers_init(obs_spec):
 	"""
 	Initialize walkers with the free parameters 
@@ -29,17 +24,19 @@ def create_walkers_init(obs_spec):
 	# Get all the free parameters types
 	final_vp_params_type = obs_spec.vp_params_type[~np.isnan(obs_spec.vp_params_flags)]
 
-	# Get walkers initialization ranges defined by ./data/walkers_init.dat
-	priors = walkers_init()
-
 	p0 = np.zeros((n_params,obs_spec.nwalkers))
-	for i in range(n_params): 
+	for i in range(n_params):
 		if final_vp_params_type[i] == 'logN':
-			p0[i] = np.random.uniform(priors[0][0],priors[0][1],size=obs_spec.nwalkers)
+			p0[i] = np.random.uniform(obs_spec.priors[0][0],
+									obs_spec.priors[0][1],
+									size=obs_spec.nwalkers)
 		elif final_vp_params_type[i] == 'b':
-			p0[i] = np.random.uniform(priors[1][0],priors[1][1],size=obs_spec.nwalkers)
+			p0[i] = np.random.uniform(obs_spec.priors[1][0],
+									obs_spec.priors[1][1],
+									size=obs_spec.nwalkers)
 		elif final_vp_params_type[i] == 'z':
-			mean_z = priors[2][0]; dv = priors[2][1];
+			mean_z = obs_spec.priors[2][0]; 
+			dv = obs_spec.priors[2][1];
 			p0[i] = np.random.uniform(mean_z-dv/c,mean_z+dv/c,size=obs_spec.nwalkers)
 
 	return np.transpose(p0)
@@ -51,7 +48,6 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 
 	# define the MCMC parameters.
 	p0 = create_walkers_init(obs_spec)
-
 	ndim = np.shape(p0)[1]
 
 	# Define the natural log of the posterior 
@@ -62,6 +58,7 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 
 	# First do a rough burn in based on accetance rate.
 	p_post_q = sampler.burnin(p0)
+
 	p_post_q = sampler.run_mcmc(obs_spec.nsteps)
 	
 	np.save(chain_filename_ncomp + '.npy', sampler.chain)
@@ -95,7 +92,8 @@ def main(config_fname):
 			obs_spec.fitting_data()
 			obs_spec.fitting_params()
 			obs_spec.spec_lsf()
-
+			obs_spec.priors_and_init()
+			
 			print_config_params(obs_spec)
 			# Ouput filename for chain
 			chain_filename_ncomp = obs_spec.chain_fname +  str(n+1)			
@@ -118,9 +116,9 @@ def main(config_fname):
 		obs_spec.fitting_data()
 		obs_spec.fitting_params()
 		obs_spec.spec_lsf()
-
+		obs_spec.priors_and_init()
+		
 		print_config_params(obs_spec)
-
 		# Run fit as specified in config
 		run_kombine_mcmc(obs_spec,obs_spec.chain_fname)	
 
