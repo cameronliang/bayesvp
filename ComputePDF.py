@@ -4,7 +4,7 @@ import sys,os
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
-from Config import obs_spec
+from Config import DefineParams
 
 def derivative_cdf(x,y):
     dx=x[1:] - x[:-1]
@@ -150,8 +150,16 @@ def write_pdf(x,pdf,output_path,x_name,ion_name):
         f.write('%.4f\t%.16f\n' % (x[i], pdf[i]))
     f.close()
 
-def main():
+def main(config_fname):
     """Extract column density PDF"""
+    # Load config parameter object 
+    obs_spec = DefineParams(config_fname)
+    obs_spec.fileio_mcmc_params()
+    obs_spec.fitting_data()
+    obs_spec.fitting_params()
+    obs_spec.spec_lsf()
+    obs_spec.priors_and_init()
+
 
     ion_name = raw_input('Ion name = ')
     x_name = 'logN';
@@ -166,4 +174,5 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(int(main() or 0))
+    config_fname = sys.argv[1]
+    sys.exit(int(main(config_fname) or 0))

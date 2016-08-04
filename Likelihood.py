@@ -2,7 +2,7 @@ import numpy as np
 import pylab as pl
 
 from Model import generic_prediction
-np.seterr(all='ignore')
+np.seterr(all='ignore') # Ignore floating point warnings.
 
 def tophat_prior(model_x, x_left,x_right):
 	if model_x >= x_left and model_x < x_right:
@@ -10,8 +10,21 @@ def tophat_prior(model_x, x_left,x_right):
 	else:
 		return -np.inf
 
-class posterior(object):
+class Posterior(object):
+    """
+    Define the natural log of the posterior distribution
 
+    Parameters:
+    ----------- 
+    obs_spec: 
+        Parameters object defined by the config file
+    
+    Returns:
+    -----------
+    lnprob: function
+        The posterior distribution as a function of the 
+        input parameters given the spectral data
+    """
     def __init__(self,obs_spec):
         self.obs_spec = obs_spec
 
@@ -39,24 +52,28 @@ class posterior(object):
             return ln_likelihood
 
     def lnprior(self,alpha):
+        """
+        Natural Log of the priors for three types of 
+        parameters [logN, b, z]
+
+        Note that for redshift z, the ranges are defined 
+        to be [mean_z-v/c,mean_z+v/c]  
+        """
         # speed of light [km/s]
         c = 299792.458
         
-        min_logN = self.obs_spec.priors[0][0] 
-        max_logN = self.obs_spec.priors[0][1] 
+        # Define these for clarity
+        min_logN,max_logN = self.obs_spec.priors[0] 
+        min_b,max_b       = self.obs_spec.priors[1]
+        mean_z,dv         = self.obs_spec.priors[2]
 
-        min_b = self.obs_spec.priors[1][0] 
-        max_b = self.obs_spec.priors[1][1]
-
-        mean_z = self.obs_spec.priors[2][0] 
-        dv = self.obs_spec.priors[2][1]
-
+        # Select the parameters that are free or tie (i.e not fixed)
         final_vp_params_type = self.obs_spec.vp_params_type[~np.isnan(self.obs_spec.vp_params_flags)]
 
         sum_logN_prior = 0; sum_b_prior = 0; sum_z_prior = 0;
 
         model_redshifts = []
-        for i in range(len(alpha)):
+        for i in xrange(len(alpha)):
             if final_vp_params_type[i] == 'logN':
                 sum_logN_prior += tophat_prior(alpha[i],min_logN,max_logN)
             elif final_vp_params_type[i] == 'b':
@@ -69,7 +86,6 @@ class posterior(object):
         model_redshifts = np.array(model_redshifts)
         if not all(sorted(model_redshifts) == model_redshifts):
             sum_z_prior = -np.inf 
-
 
         return sum_logN_prior + sum_b_prior + sum_z_prior
 

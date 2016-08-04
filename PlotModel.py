@@ -2,12 +2,12 @@ import numpy as np
 import pylab as pl
 import sys
 
-from Model import generic_prediction, ReadTransitionData
-from Utilities import read_mcmc_fits, write_mcmc_stats
+from Model import generic_prediction
+from Utilities import write_mcmc_stats
 
 def plot_spec(obs_spec):
-    c = 299792.485
-    burnin = 0.5 * obs_spec.nsteps
+    c = 299792.485 # [km/s]
+    burnin = 0.5 * obs_spec.nsteps #  Hardwired burnin fraction = 0.5
 
     mcmc_chain_fname = obs_spec.chain_fname + '.npy'
     mcmc_chain = np.load(mcmc_chain_fname)
@@ -63,8 +63,8 @@ def plot_spec(obs_spec):
         print('Written %svpfit_mcmc/bestfit_model.dat\n' % obs_spec.spec_path)
 
 def main(config_fname):
-    from Config import obs_data
-    obs_spec = obs_data(config_fname)
+    from Config import DefineParams
+    obs_spec = DefineParams(config_fname)
     obs_spec.fileio_mcmc_params()
     obs_spec.fitting_data()
     obs_spec.fitting_params()

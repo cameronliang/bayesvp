@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import sys,os
+import kombine
 
 from Utilities import determine_autovp, print_config_params,\
 					BIC_gaussian_kernel,BIC_best_estimator,\
@@ -8,16 +9,33 @@ from Utilities import determine_autovp, print_config_params,\
 
 def create_walkers_init(obs_spec):
 	"""
-	Initialize walkers with the free parameters 
+	Initialize walkers with the free parameters
 
 	Parameters
 	-----------
-	flags
-	vp_params_type
-	nwalkers
+	obs_spec: obj
+		Parameter object defined by the config file; Following 
+		attributes are used in creating walkers initialization. 
+	
+		vp_params_flags: array_like
+			Determines whether or not a parameter is fixed, 
+			free or tied. If unique int -> free; if repeated 
+			int -> tied; if None -> fixed.
+		vp_params_type: array_like
+			Determine the types of parameters (logN, b, z) for 
+			initializationof the ranges.  
+		nwalkers: int
+			Number of walkers to run in MCMC.
+	
+	Returns
+	-----------
+	p0.T: array; shape = (nwalkers,ndim)
+		The starting point of the walkers at n dimensions, where
+		n = number of parameters. These will then walk/sample around 
+		the parameters space based on the MCMC algorithm used. 
 	"""
 
-	c = 299792.458
+	c = 299792.458 # speed of light [km/s]
 	temp_flags = obs_spec.vp_params_flags[~np.isnan(obs_spec.vp_params_flags)]
 	n_params =  len(list(set(temp_flags)))
 
@@ -25,7 +43,7 @@ def create_walkers_init(obs_spec):
 	final_vp_params_type = obs_spec.vp_params_type[~np.isnan(obs_spec.vp_params_flags)]
 
 	p0 = np.zeros((n_params,obs_spec.nwalkers))
-	for i in range(n_params):
+	for i in xrange(n_params):
 		if final_vp_params_type[i] == 'logN':
 			p0[i] = np.random.uniform(obs_spec.priors[0][0],
 									obs_spec.priors[0][1],
@@ -42,23 +60,39 @@ def create_walkers_init(obs_spec):
 	return np.transpose(p0)
 
 def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
+	"""
+	Run MCMC and save the chain based on parameters defined 
+	in config file. 
 
-	from Likelihood import posterior
-	import kombine
+	Parameters
+	-----------
+	obs_spec: obj
+		Parameter object defined by the config file; Following 
+		attributes are used in creating walkers initialization.
+	chain_filename_ncomp: str
+		Output filename without extention; '.npy' is assumed 
+		added later
+
+	Returns
+	-----------
+	chains: python format (.npy) binary file 
+		One chain for the specified MCMC run. Use np.load
+		to load the n-dim array into memory for manipulation.
+	"""
+	from Likelihood import Posterior
 
 	# define the MCMC parameters.
 	p0 = create_walkers_init(obs_spec)
 	ndim = np.shape(p0)[1]
 
 	# Define the natural log of the posterior 
-	lnprob = posterior(obs_spec)
+	lnprob = Posterior(obs_spec)
 
 	# Set up the sampler
 	sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
 
 	# First do a rough burn in based on accetance rate.
 	p_post_q = sampler.burnin(p0)
-
 	p_post_q = sampler.run_mcmc(obs_spec.nsteps)
 	
 	np.save(chain_filename_ncomp + '.npy', sampler.chain)
@@ -67,9 +101,21 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 
 def main(config_fname):
 	"""
-	Below is the skeleton of the main
-	Create copies of config file to run the fit with 
-	multiple similar to CLOUDY 
+	Run fixed number of component fit specified by the 
+	config file or make copies of the configs and run up 
+	to the maximum number of components until the best model 
+	is found.
+
+	Parameters:
+	-----------
+	config_fname: str
+		Full path + the file name
+		See ./readme.md for detaieded structure of the config file
+
+	Returns
+	-----------
+	chains: python format (.npy) binary file 
+		One or more chains for each MCMC run.  
 	"""
 
 	# Determine if config is set to autovp 
@@ -87,7 +133,7 @@ def main(config_fname):
 								+ config_fname[-4:])
 
 			# Load config parameter object 
-			obs_spec = obs_data(config_fname_ncomp)
+			obs_spec = DefineParams(config_fname_ncomp)
 			obs_spec.fileio_mcmc_params()
 			obs_spec.fitting_data()
 			obs_spec.fitting_params()
@@ -111,7 +157,7 @@ def main(config_fname):
 
 	else:
 		# Load config parameter object 
-		obs_spec = obs_data(config_fname)
+		obs_spec = DefineParams(config_fname)
 		obs_spec.fileio_mcmc_params()
 		obs_spec.fitting_data()
 		obs_spec.fitting_params()
@@ -124,6 +170,6 @@ def main(config_fname):
 
 if __name__ == '__main__':
 
-	from Config import obs_data
+	from Config import DefineParams
 	config_fname = sys.argv[1]
 	main(config_fname)

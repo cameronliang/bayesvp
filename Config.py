@@ -1,12 +1,34 @@
 import numpy as np
-import pylab as pl
-import sys,os,re 
+import sys
+import os
+import re 
 
 
-class obs_data:
+class DefineParams:
     """
     Read and define fitting parameters from 
     config file
+
+    Attributes:
+    -----------
+    lines, spec_path, chain_short_fname, 
+    chain_fname, mcmc_outputpath: str
+        Files I/O
+    nwalkers, nsteps, nthreads: ints    
+        MCMC parameters
+    wave,flux,error: arrays
+        Selected region of the input spectral data
+    wave_begins, wave_ends: array_like
+        Selected wavelength regions bounds
+    vp_params, transitions_params_array, vp_params_type,vp_params_type:array_like
+        Model auxilary parameters/controls 
+    n_component: int
+        Number of Components defined by the model
+    lsf: array_like
+        Line spread function to be convolved with the model
+    priors: array_like; shape = (3,2)
+        Priors for three types of parameters (logN, b, z)
+
     """
     
     def __init__(self,config_fname):
@@ -40,11 +62,11 @@ class obs_data:
         # Paths and fname strings
         for line in self.lines:
             line = filter(None,line.split(' '))
-            if 'spec_path' in line:
+            if 'spec_path' in line or 'input' in line or 'spectrum' in line:
                 self.spec_path = line[1]
-            elif 'output' in line:
+            elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
-            elif 'mcmc' in line:
+            elif 'mcmc_params' in line or 'mcmc' in line:
                 self.nwalkers = int(line[1])
                 self.nsteps = int(line[2])
                 self.nthreads = int(line[3])
@@ -129,13 +151,14 @@ class obs_data:
         """
 
         amu = 1.66053892e-24   # 1 atomic mass in grams
-        data_file = './data/atom.dat'
-        atoms  = np.loadtxt(data_file, dtype=str, usecols=[0])
-        states = np.loadtxt(data_file, dtype=str, usecols=[1])
-        wave   = np.loadtxt(data_file, usecols=[2])
-        osc_f  = np.loadtxt(data_file, usecols=[3])
-        gamma  = np.loadtxt(data_file, usecols=[4])
-        mass   = np.loadtxt(data_file, usecols=[5]) * amu 
+
+        data_path = os.path.dirname(__file__) # Absolute path for BayseVP
+        data_file = data_path + '/data/atom.dat'
+        atoms,states  = np.loadtxt(data_file, dtype=str, 
+                                  unpack=True,usecols=[0,1])
+        wave,osc_f,gamma,mass = np.loadtxt(data_file,unpack=True,
+                                            usecols=[2,3,4,5])
+        mass = mass*amu 
 
         def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 
@@ -144,7 +167,7 @@ class obs_data:
                             (wave >= wave_start/(1+redshift)) & 
                             (wave < wave_end/(1+redshift)))[0]
             if len(inds) == 0:
-                return np.array([np.nan,np.nan,np.nan,np.nan])
+                return np.empty(4)*np.nan
             else:
                 return np.array([osc_f[inds],wave[inds],gamma[inds], mass[inds]]).T
 
@@ -266,6 +289,8 @@ class obs_data:
         Read priors and use them for walker 
         initialization 
 
+        Returns 
+        -----------
         format in config file:
         logN min_logN max_logN
         b    min_b    max_b

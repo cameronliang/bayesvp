@@ -1,7 +1,7 @@
-import sys, os
 import numpy as np
 from scipy.special import wofz
-import pylab as pl
+import sys
+import os
 
 from Utilities import convolve_lsf
 
@@ -38,12 +38,12 @@ def WriteSpec_ascii(wavelength,flux,fname):
 
 def ReadTransitionData():    
     amu = 1.66053892e-24   # 1 atomic mass in grams
-    data_file = './data/atomic_data.dat'
+    data_path = os.path.dirname(__file__) # Absolute path for BayseVP
+    data_file = data_path + '/data/atomic_data.dat'
     name  = np.loadtxt(data_file, dtype=str, usecols=[0])
-    wave  = np.loadtxt(data_file, usecols=[1])
-    osc_f = np.loadtxt(data_file, usecols=[2])
-    gamma = np.loadtxt(data_file, usecols=[3])
-    mass  = np.loadtxt(data_file, usecols=[4]) * amu
+    wave,osc_f,gamma,mass  = np.loadtxt(data_file, unpack=True,
+                                        usecols=[1,2,3,4])
+    mass = mass*amu
 
     transition_dict = {}
     for i in xrange(len(name)):
@@ -57,16 +57,16 @@ def WavelengthArray(wave_start,wave_end,dv):
     wave_start = float(wave_start); wave_end = float(wave_end)
 
     # Calcualte Total number of pixel given the resultion and bounds of spectrum
-    TOTAL_NUMBER_PIXEL = np.int(np.log10(wave_end/wave_start) / np.log10(1 + dv/c) + 0.5)
-    array_index        = np.arange(0,TOTAL_NUMBER_PIXEL,1)
+    total_number_pixel = np.int(np.log10(wave_end/wave_start) / np.log10(1 + dv/c) + 0.5)
+    array_index        = np.arange(0,total_number_pixel,1)
     
     # Return wavelength array
     return wave_start * ((1 + dv/c)**array_index)
 
 def voigt(x, a):
     """
-    Real part of Faddeeva function.   
-    w(z) = exp(-z^2) erfc(iz), 
+    Real part of Faddeeva function, where    
+    w(z) = exp(-z^2) erfc(jz)
     """
     z = x + 1j*a
     return wofz(z).real
@@ -81,7 +81,8 @@ def Voigt(b,z,nu,nu0,Gamma):
     3. wavelength = wavelength array for the spectrum. 
     4. Temperature of the gas
 
-    Output:
+    Returns:
+    ----------
     voigt profile as a function of frequency
     """
 
@@ -100,12 +101,14 @@ def bParameter(logT,b_turb,mass):
     logT   = log10 of Temperature          [Kelvin]
     b_turb = turbulance velocity           [km/s]
 
-    Output: 
-    b parameter in km/s
+    Returns:
+    ----------
+    b parameter: array_like; [km/s]
+        Combined thermal and non-thermal velocity
     """
     
-    T = 10**logT
-    b_thermal = np.sqrt(2. * kB*T / mass)*cm_km  #[km/s]
+    temperature = 10**logT
+    b_thermal = np.sqrt(2. * kB*temperature / mass)*cm_km  # units: [km/s]
     return np.sqrt(b_thermal**2 + b_turb**2)
 
 def Intensity(logN,b,z,wave,transition_name):
@@ -113,14 +116,17 @@ def Intensity(logN,b,z,wave,transition_name):
     This function is sufficient in itself to 
     create an absorption line. 
 
-    Input: 
+    Parameters:
+    ---------- 
         logN = log10 column density               [cm-2]
         b    = b parameter                        [km/s]
         z    = redshift of the gas                 
         wave = input rest frame wavelength array  [\AA]
 
-    Output: 
-        Normlized Intensity array with length = len(wave)
+    Returns:
+    ----------
+    Intensity: array_like
+        Normlized Intensity with length = len(wave)
     """    
     transition_data = ReadTransitionData()
 
@@ -139,7 +145,7 @@ def Intensity(logN,b,z,wave,transition_name):
     # Compute Optical depth
     tau = N*sigma0*f*Voigt(b,z,nu,nu0,gamma)
     
-    # Return Normalized intensity
+    # Normalized intensity
     return np.exp(-tau.astype(np.float))
 
 def General_Intensity(logN,b,z,wave,atomic_params):
@@ -158,7 +164,7 @@ def General_Intensity(logN,b,z,wave,atomic_params):
 
     # Compute Optical depth
     tau = N*sigma0*f*Voigt(b,z,nu,nu0,gamma)
-    
+
     # Return Normalized intensity
     return np.exp(-tau.astype(np.float))
 
@@ -187,7 +193,26 @@ def model_prediction(alpha,wave,n_component,transition_names):
     return np.product(spec,axis=0)
 
 def generic_prediction(alpha,obs_spec_obj):
+    """
+    This is a model flux produced by a generic combination 
+    of the voigt profile parameters by arbitrary combination
+    of fixing/tieing/freeing any parameters; see Config.py
 
+    Parameters:
+    ----------
+    alpha: array_like
+        One dimensional array of n parameters; The structure 
+        of the array needs to match the ones specified in the 
+        config file  
+    obs_spec_obj:
+        Paramters object defined by the config file
+        see ./Config.py
+    Returns
+    ----------
+    Model flux: 1D array;
+        Predicted flux based on the paramters with length equal to 
+        the length of the input wavelength array
+    """
     component_flags = obs_spec_obj.vp_params_flags.reshape(obs_spec_obj.n_component,3)
 
     spec = [] 
@@ -220,18 +245,16 @@ def generic_prediction(alpha,obs_spec_obj):
 if __name__ == '__main__':
      
     import matplotlib.pyplot as pl
-    import sys
-
-    from Config import obs_data
+    from Config import DefineParams
 
     config_fname = sys.argv[1]
-    obs_spec = obs_data(config_fname)
+    obs_spec = DefineParams(config_fname)
     obs_spec.fileio_mcmc_params()
     obs_spec.fitting_data()
     obs_spec.fitting_params()
     obs_spec.spec_lsf()
     
-    alpha = np.array([15.,30,0.059]) 
+    alpha = np.array([15.,30,0.0]) 
     flux = generic_prediction(alpha,obs_spec)
     
     pl.plot(obs_spec.wave,flux)
