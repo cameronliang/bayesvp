@@ -5,7 +5,7 @@ import kombine
 
 from Utilities import determine_autovp, print_config_params,\
 					BIC_gaussian_kernel,BIC_best_estimator,\
-					printline
+					printline, BIC_simple_estimate
 
 def create_walkers_init(obs_spec):
 	"""
@@ -127,7 +127,7 @@ def main(config_fname):
 
 		for n in xrange(n_component_max):
 			print('Fitting %d components.. ' % (n + 1))
-			
+
 			# Get new config filename; 
 			config_fname_ncomp = (config_fname[:-4] + str(n+1)
 								+ config_fname[-4:])
@@ -139,20 +139,20 @@ def main(config_fname):
 			obs_spec.fitting_params()
 			obs_spec.spec_lsf()
 			obs_spec.priors_and_init()
-			
+
 			print_config_params(obs_spec)
 			# Ouput filename for chain
 			chain_filename_ncomp = obs_spec.chain_fname +  str(n+1)			
 			run_kombine_mcmc(obs_spec,chain_filename_ncomp)
-			
-			# Input the chian filename and number of data points
-			bic[n] = BIC_best_estimator(chain_filename_ncomp,len(obs_spec.flux))
 
+			# Input the chian filename and number of data points
+			bic[n] = BIC_simple_estimate(chain_filename_ncomp,obs_spec)
+			
 			# compare with the previous fit 
 			if n >= 1:
 				# Stop fitting the previous bic is smaller (i.e better) 
 				if bic[n-1] <= bic[n]:
-					print("Based on BIC, %d component model is the best fit." % (n))					 
+					print("Based on BIC, %d-component model is the best fit." % (n))					 
 					break
 
 	else:
