@@ -7,6 +7,61 @@ from sklearn.grid_search import GridSearchCV
 # Model Comparisons: Bayesian Evidence / BIC / AIC  
 ###############################################################################
 
+def determine_autovp(config_fname):
+	"""
+	Determine based on config file if automatic 
+	mode is chosen for vpfit. If auto = True, then 
+	reproduce the (n_max - n_min) number of files with 
+	that number components
+	"""
+	def replicate_config(config_fname,normal_lines, 
+						component_line,n_component):
+
+		# Assume file extension has .dat or .txt 
+		new_config_fname = (config_fname[:-4] + str(n_component)
+							 + config_fname[-4:])
+		f = open(new_config_fname,'w')
+		for line in normal_lines:
+			f.write(line); f.write('\n')
+		for line in component_line:
+			for n in xrange(1,n_component+1):
+				f.write(line); f.write('\n')
+		f.close()
+
+	# Read and filter empty lines
+	all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
+
+	normal_lines = []   # all lines except line with '!'
+	component_line = [] # lines with one '%'
+	auto_vp = False; n_component_max = 1; n_component_min = 1
+	for line in all_lines:
+		if line.startswith('!'): 
+			if re.search('auto', line) or re.search('AUTO', line): 
+				line = line.split(' ')
+				if len(line) == 3:
+					n_component_min = 1 
+					n_component_max = int(line[2])
+				elif len(line) == 4: 
+					n_component_min = int(line[2])
+					n_component_max = int(line[3])
+				auto_vp = True
+
+		elif re.search('%',line):
+			if line.split(' ')[0] == '%':
+				component_line.append(line)
+			else:
+				normal_lines.append(line)
+		else:
+			normal_lines.append(line)
+
+	# Produce Config files
+	for n in xrange(n_component_min,n_component_max+1):
+		replicate_config(config_fname,normal_lines,component_line,n)
+
+	return auto_vp, n_component_min, n_component_max
+
+
+
 def BIC_simple_estimate(chain_fname,obs_spec_obj):
 	from Likelihood import Posterior
 	# Define the posterior function based on data
@@ -131,47 +186,6 @@ def gr_indicator():
 
 def printline():
 	print("-------------------------------------------------------------------")
-
-def determine_autovp(config_fname):
-    
-	# Read and filter empty lines
-	all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
-
-	normal_lines = []   # all lines except line with '!'
-	component_line = [] # lines with one '%'
-	auto_vp = False; n_component_max = 0
-	for line in all_lines:
-		if line.startswith('!'): 
-			if re.search('auto', line) or re.search('AUTO', line): 
-				line = line.split(' ')
-				n_component_max = int(line[2])
-				auto_vp = True
-
-		elif re.search('%',line):
-			if line.split(' ')[0] == '%':
-				component_line.append(line)
-			else:
-				normal_lines.append(line)
-		else:
-			normal_lines.append(line)
-
-	def replicate_config(config_fname,normal_lines, 
-						component_line,n_component):
-
-		# Assume file extension has .dat or .txt 
-		new_config_fname = (config_fname[:-4] + str(n_component)
-							 + config_fname[-4:])
-		f = open(new_config_fname,'w')
-		for line in normal_lines:
-			f.write(line); f.write('\n')
-		for line in component_line:
-			for n in xrange(1,n_component+1):
-				f.write(line); f.write('\n')
-		f.close()
-
-	for n in xrange(1,n_component_max+1):
-		replicate_config(config_fname,normal_lines,component_line,n)
-	return auto_vp, n_component_max
 
 def print_config_params(obs_spec):
 

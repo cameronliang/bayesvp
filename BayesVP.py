@@ -4,8 +4,7 @@ import sys,os
 import kombine
 
 from Utilities import determine_autovp, print_config_params,\
-					BIC_gaussian_kernel,BIC_best_estimator,\
-					printline, BIC_simple_estimate
+					BIC_simple_estimate, printline 
 
 def create_walkers_init(obs_spec):
 	"""
@@ -120,16 +119,18 @@ def main(config_fname):
 
 	# Determine if config is set to autovp 
 	# If so, create multiple configs file specified by n_component_max
-	auto_vp, n_component_max = determine_autovp(config_fname)
+	auto_vp, n_component_min, n_component_max = determine_autovp(config_fname)
 
 	if auto_vp:
-		bic = np.zeros(n_component_max)
 
-		for n in xrange(n_component_max):
-			print('Fitting %d components.. ' % (n + 1))
+		bic = np.zeros(n_component_max-n_component_min+1)
+
+		for n in xrange(n_component_max-n_component_min+1):
+			printline()
+			print('Fitting %d components.. ' % (n + n_component_min))
 
 			# Get new config filename; 
-			config_fname_ncomp = (config_fname[:-4] + str(n+1)
+			config_fname_ncomp = (config_fname[:-4] + str(n+n_component_min)
 								+ config_fname[-4:])
 
 			# Load config parameter object 
@@ -141,8 +142,9 @@ def main(config_fname):
 			obs_spec.priors_and_init()
 
 			print_config_params(obs_spec)
+			
 			# Ouput filename for chain
-			chain_filename_ncomp = obs_spec.chain_fname +  str(n+1)			
+			chain_filename_ncomp = obs_spec.chain_fname + str(n+n_component_min)
 			run_kombine_mcmc(obs_spec,chain_filename_ncomp)
 
 			# Input the chian filename and number of data points
@@ -150,9 +152,17 @@ def main(config_fname):
 			
 			# compare with the previous fit 
 			if n >= 1:
-				# Stop fitting the previous bic is smaller (i.e better) 
+				# Stop fitting the previous bic is smaller (i.e better)
 				if bic[n-1] <= bic[n]:
-					print("Based on BIC, %d-component model is the best fit." % (n))					 
+					components_count = np.arange(n_component_min,n_component_max)
+					index = np.where(bic[:n+1] == np.min(bic[:n+1]))[0]
+					
+					printline()
+					print('Based on BIC %d-component model is the best model' % components_count[index])
+					printline()
+					
+					np.savetxt(obs_spec.mcmc_outputpath + '/bic.dat',np.c_[components_count,bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
+					
 					break
 
 	else:
@@ -165,6 +175,7 @@ def main(config_fname):
 		obs_spec.priors_and_init()
 		
 		print_config_params(obs_spec)
+		
 		# Run fit as specified in config
 		run_kombine_mcmc(obs_spec,obs_spec.chain_fname)	
 
