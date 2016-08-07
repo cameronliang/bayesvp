@@ -22,7 +22,16 @@ def determine_autovp(config_fname):
 							 + config_fname[-4:])
 		f = open(new_config_fname,'w')
 		for line in normal_lines:
-			f.write(line); f.write('\n')
+			temp_line = line.split(' ')
+			
+			# Add the number of component at the end of output chain filename
+			if 'output' in temp_line or 'chain' in temp_line:
+				output_name = temp_line[1] + str(n_component)
+				f.write(temp_line[0] + ' '); f.write(output_name);
+				f.write('\n')
+			else:
+				f.write(line); f.write('\n')
+		
 		for line in component_line:
 			for n in xrange(1,n_component+1):
 				f.write(line); f.write('\n')

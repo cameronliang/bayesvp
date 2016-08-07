@@ -141,15 +141,14 @@ def main(config_fname):
 			obs_spec.spec_lsf()
 			obs_spec.priors_and_init()
 
-			print_config_params(obs_spec)
-			
+			#print_config_params(obs_spec)
+
 			# Ouput filename for chain
-			chain_filename_ncomp = obs_spec.chain_fname + str(n+n_component_min)
-			run_kombine_mcmc(obs_spec,chain_filename_ncomp)
+			#run_kombine_mcmc(obs_spec,obs_spec.chain_fname)
 
 			# Input the chian filename and number of data points
-			bic[n] = BIC_simple_estimate(chain_filename_ncomp,obs_spec)
-			
+			bic[n] = BIC_simple_estimate(obs_spec.chain_fname,obs_spec)
+
 			# compare with the previous fit 
 			if n >= 1:
 				# Stop fitting the previous bic is smaller (i.e better)
@@ -160,8 +159,8 @@ def main(config_fname):
 					printline()
 					print('Based on BIC %d-component model is the best model' % components_count[index])
 					printline()
-					
-					np.savetxt(obs_spec.mcmc_outputpath + '/bic.dat',np.c_[components_count,bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
+
+					np.savetxt(obs_spec.mcmc_outputpath + '/bic.dat',np.c_[components_count[:n+1],bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
 					
 					break
 
