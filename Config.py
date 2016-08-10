@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 import os
 import re 
 
@@ -151,8 +150,7 @@ class DefineParams:
         """
 
         amu = 1.66053892e-24   # 1 atomic mass in grams
-
-        data_path = os.path.dirname(__file__) # Absolute path for BayseVP
+        data_path = os.path.dirname(os.path.abspath(__file__)) # Absolute path for BayseVP
         data_file = data_path + '/data/atom.dat'
         atoms,states  = np.loadtxt(data_file, dtype=str, 
                                   unpack=True,usecols=[0,1])
@@ -271,7 +269,13 @@ class DefineParams:
 
         # Get the LSF function from directory 'database'
         if defined_lsf:
-            if len(lsf_line) == 1 or len(lsf_line) == len(self.wave_begins):
+            if len(lsf_line) == len(self.wave_begins):
+                self.lsf = []
+                for lsf_fname in lsf_line:
+                    # assume lsf file has one column 
+                    fname = self.spec_path + '/database/' + lsf_fname
+                    self.lsf.append(np.loadtxt(fname))
+            elif len(lsf_line) == 1:
                 for lsf_fname in lsf_line:
                     # assume lsf file has one column 
                     fname = self.spec_path + '/database/' + lsf_fname
@@ -308,3 +312,21 @@ class DefineParams:
                 self.priors[1] = [float(line[1]),float(line[2])]
             if 'z' in line:
                 self.priors[2] = [float(line[1]),float(line[2])]
+
+
+
+if __name__ == '__main__':
+
+    # test
+    import sys
+    from Utilities import print_config_params 
+    config_fname = sys.argv[1]
+    # Load config parameter object 
+    obs_spec = DefineParams(config_fname)
+    obs_spec.fileio_mcmc_params()
+    obs_spec.fitting_data()
+    obs_spec.fitting_params()
+    obs_spec.spec_lsf()
+    obs_spec.priors_and_init()
+    
+    print_config_params(obs_spec)

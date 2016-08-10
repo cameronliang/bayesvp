@@ -144,7 +144,7 @@ def main(config_fname):
 			#print_config_params(obs_spec)
 
 			# Ouput filename for chain
-			#run_kombine_mcmc(obs_spec,obs_spec.chain_fname)
+			run_kombine_mcmc(obs_spec,obs_spec.chain_fname)
 
 			# Input the chian filename and number of data points
 			bic[n] = BIC_simple_estimate(obs_spec.chain_fname,obs_spec)

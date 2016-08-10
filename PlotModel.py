@@ -30,7 +30,7 @@ def plot_model_comparison(config_params_obj,model_flux,rest_wave,redshift,dv):
     
     pl.savefig(config_params_obj.spec_path + '/vpfit_mcmc/bestfit_' + config_params_obj.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
 
-    print('Written %svpfit_mcmc/best_fit_%s.pdf\n' % (config_params_obj.spec_path,config_params_obj.chain_short_fname))
+    print('Written %s/vpfit_mcmc/best_fit_%s.pdf\n' % (config_params_obj.spec_path,config_params_obj.chain_short_fname))
 
 def write_model_spectrum(config_params_obj,model_flux):
     np.savetxt(config_params_obj.mcmc_outputpath + 
@@ -38,7 +38,7 @@ def write_model_spectrum(config_params_obj,model_flux):
             np.c_[config_params_obj.wave,config_params_obj.flux, 
             config_params_obj.dflux,model_flux],
             header='wave\tflux\terror\tmodel')
-    print('Written %svpfit_mcmc/bestfit_model.dat' % config_params_obj.spec_path)
+    print('Written %s/vpfit_mcmc/bestfit_model.dat' % config_params_obj.spec_path)
     
 def write_model_summary(config_params_obj):
     mcmc_chain_fname = config_params_obj.chain_fname + '.npy'
