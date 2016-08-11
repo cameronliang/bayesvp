@@ -160,7 +160,8 @@ def main(config_fname):
 					print('Based on BIC %d-component model is the best model' % components_count[index])
 					printline()
 
-					np.savetxt(obs_spec.mcmc_outputpath + '/bic.dat',np.c_[components_count[:n+1],bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
+					np.savetxt(obs_spec.mcmc_outputpath + '/bic_'+obs_spec.chain_short_fname[:-1]+'.dat',
+					np.c_[components_count[:n+1],bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
 					
 					break
 
@@ -183,3 +184,4 @@ if __name__ == '__main__':
 	from Config import DefineParams
 	config_fname = sys.argv[1]
 	main(config_fname)
+	

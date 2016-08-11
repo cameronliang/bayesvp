@@ -129,7 +129,6 @@ class DefineParams:
         inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
 
 
-
     def fitting_params(self):
         """
         Get Voigt profile parameters of arbitary number of components

@@ -169,11 +169,17 @@ def gaussian_kernel(std):
     return norm*np.exp(-(x**2/(2*std**2)))
 
 def convolve_lsf(flux,lsf):
-    # convolve 1-flux to remove edge effects wihtout using padding
-	conv_flux = 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
-	return conv_flux
+	if len(flux) < len(lsf):
+		# Add padding to make sure to return the same length in flux.
+		padding = np.ones(len(lsf)-len(flux)+1)
+		flux = np.hstack([padding,flux])
+    	
+		conv_flux = 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
+		return conv_flux[len(padding):]
 
-
+	else:
+		# convolve 1-flux to remove edge effects wihtout using padding
+		return 1-np.convolve(1-flux,lsf,mode='same') /np.sum(lsf)
 
 ###############################################################################
 # Convergence 
