@@ -238,27 +238,30 @@ def generic_prediction(alpha,obs_spec_obj):
                 if not np.isnan(obs_spec_obj.transitions_params_array[i][k][l]).any():
                     model_flux = General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])
 
-                    # Convolve (potentially )LSF for each region
+                    # Convolve (potentially )LSF for each region 
                     spec.append(convolve_lsf(model_flux,obs_spec_obj.lsf[k])) 
 
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
 if __name__ == '__main__':
-     
+
     import matplotlib.pyplot as pl
     from Config import DefineParams
+    data_path = os.path.dirname(os.path.abspath(__file__))
+    config_fname = data_path + '/tests/config_CIV.dat'
 
-    config_fname = sys.argv[1]
     obs_spec = DefineParams(config_fname)
     obs_spec.fileio_mcmc_params()
     obs_spec.fitting_data()
     obs_spec.fitting_params()
     obs_spec.spec_lsf()
     
-    alpha = np.array([18.,30,0.2374,13.,30,0.2387]) 
+    alpha = np.array([13.766,14.42,-0.000139]) 
     flux = generic_prediction(alpha,obs_spec)
     
-    pl.plot(obs_spec.wave,flux)
+    pl.step(obs_spec.wave,obs_spec.flux,c='k')
+    pl.step(obs_spec.wave,obs_spec.dflux,c='r')
+    pl.plot(obs_spec.wave,flux,lw=1.5,c='b')
     pl.ylim([0,1.4])
     pl.show()

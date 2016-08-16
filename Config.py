@@ -62,7 +62,10 @@ class DefineParams:
         for line in self.lines:
             line = filter(None,line.split(' '))
             if 'spec_path' in line or 'input' in line or 'spectrum' in line:
-                self.spec_path = line[1]
+                if line[1] == 'test_path_to_spec':
+                    self.spec_path = os.path.dirname(os.path.abspath(__file__)) + '/tests/'
+                else:
+                    self.spec_path = line[1]
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
             elif 'mcmc_params' in line or 'mcmc' in line:
@@ -284,7 +287,7 @@ class DefineParams:
                 exit()
         else:
             # Convolve with LSF = 1
-            self.lsf = 1.
+            self.lsf = np.ones(len(self.wave_begins))
 
 
     def priors_and_init(self):

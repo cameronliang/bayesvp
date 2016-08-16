@@ -169,7 +169,7 @@ def gaussian_kernel(std):
     return norm*np.exp(-(x**2/(2*std**2)))
 
 def convolve_lsf(flux,lsf):
-	if len(flux) < len(lsf):
+	if len(flux) < len(np.atleast_1d(lsf)):
 		# Add padding to make sure to return the same length in flux.
 		padding = np.ones(len(lsf)-len(flux)+1)
 		flux = np.hstack([padding,flux])
