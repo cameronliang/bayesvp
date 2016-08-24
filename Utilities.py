@@ -1,7 +1,7 @@
 import numpy as np
 import re
 from sklearn.neighbors import KernelDensity
-from sklearn.grid_search import GridSearchCV
+from scipy.special import gamma
 
 ###############################################################################
 # Model Comparisons: Bayesian Evidence / BIC / AIC  
@@ -71,7 +71,14 @@ def determine_autovp(config_fname):
 
 
 
-def BIC_simple_estimate(chain_fname,obs_spec_obj):
+def model_info_criterion(chain_fname,obs_spec_obj):
+	"""
+	Use either BIC or AIC for model selection
+
+	Aikake Information Criterion (AIC); 
+	see Eqn (4.17) Ivezic+ "Statistics, Data Mining and Machine Learning 
+	in Astronomy" (2014)
+	"""
 	from Likelihood import Posterior
 	# Define the posterior function based on data
 	lnprob = Posterior(obs_spec_obj)
@@ -85,8 +92,94 @@ def BIC_simple_estimate(chain_fname,obs_spec_obj):
 
 	log10_L = lnprob(medians)
 	lnL = log10_L /np.log10(2.7182818)
-	return -2*lnL + n_params*np.log(data_length)
+	if obs_spec_obj.model_selection == 'aic':
+		return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
+	elif obs_spec_obj.model_selection == 'bic':
+		return -2*lnL + n_params*np.log(data_length)
+	else:
+		print('model_selection is not defined to either be aic or bic')
+		exit()
 
+#----------------------------------------------------------------------
+# credit: AstroML (see fig 5.2.4)
+# Esitmate Odds ratios in a random subsample of the chains in MCMC 
+#----------------------------------------------------------------------
+
+def get_logp(S, model):
+    """compute log(p) given a pyMC model"""
+    M = pymc.MAP(model)
+    traces = np.array([S.trace(s)[:] for s in S.stochastics])
+    logp = np.zeros(traces.shape[1])
+    for i in range(len(logp)):
+        logp[i] = -M.func(traces[:, i])
+    return logp
+
+
+def estimate_bayes_factor(traces, logp, r=0.05, return_list=False):
+    """Estimate the bayes factor using the local density of points"""
+    D, N = traces.shape
+
+    # compute volume of a D-dimensional sphere of radius r
+    Vr = np.pi ** (0.5 * D) / gamma(0.5 * D + 1) * (r ** D)
+
+    # use neighbor count within r as a density estimator
+    bt = BallTree(traces.T)
+    count = bt.query_radius(traces.T, r=r, count_only=True)
+
+    BF = logp + np.log(N) + np.log(Vr) - np.log(count)
+
+    if return_list:
+        return BF
+    else:
+        p25, p50, p75 = np.percentile(BF, [25, 50, 75])
+        return p50, 0.7413 * (p75 - p25)
+
+########################################################################
+
+def Local_density_LM(chain_fname,obs_spec_obj):
+	"""
+	L(M) based on local density estimate
+	See (5.127) in Ivezic+ 2014
+
+	# Assume we need only L(M) at a given pt.  
+	"""
+	from Likelihood import Posterior
+	
+	# Define the posterior function based on data
+	lnprob = Posterior(obs_spec_obj)
+	chain = np.load(chain_fname + '.npy')
+	n_params = np.shape(chain)[-1]
+	samples = chain.reshape((-1,n_params))
+	medians = np.median(samples,axis=0) # shape = (n_params,)
+
+	# Evaluate the Posterior
+	log10_posterior = lnprob(medians)
+
+	# kernel density estimate of the local probability at median
+	kde = KernelDensity(kernel='gaussian',bandwidth=1).fit(samples)
+	#log_rho = float(kde.score_samples(medians.reshape(1,-1))) 
+	log_rho = kde.score(medians.reshape(1,-1))
+	logN = np.log10(samples.shape[0])
+	print 'logN', logN
+	log10_LM = logN + (log10_posterior - log_rho) 
+	return log10_LM
+
+def Compare_Model(L1,L2,model_selection):
+	"""
+	Compare two Models L(M1) = L1 and L(M2) = L2. 
+	if return True L1 wins; otherwise L2 wins. 
+
+	For Bayes Factor/Odds ratio, it is the log10(L1/L2) being 
+	compared. 
+	"""
+	if model_selection == 'bic' or model_selection == 'aic':
+		return L1 <= L2
+	elif model_selection == 'bayes' or model_selection == 'odds':
+		return L1-L2 >= 0
+
+#----------------------------------------------------------------------
+# Others 
+#----------------------------------------------------------------------
 def BIC_gaussian_kernel(chain_fname,data_length):
 	"""
 	Bayesian information criterion
@@ -204,19 +297,21 @@ def printline():
 
 def print_config_params(obs_spec):
 
-    print('\n')
-    print('Spectrum Path: %s'     % obs_spec.spec_path)
-    print('Spectrum name: %s'     % obs_spec.spec_short_fname)
-    print('Fitting %i components with transitions: ' % obs_spec.n_component)
-    for i in xrange(len(obs_spec.transitions_params_array)):
-        for j in xrange(len(obs_spec.transitions_params_array[i])):
-            if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
-                for k in xrange(len(obs_spec.transitions_params_array[i][j])):
-                    rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
-                    print('    Transitions Wavelength: %.3f' % rest_wavelength)
+	print('\n')
+	print('Spectrum Path: %s'     % obs_spec.spec_path)
+	print('Spectrum name: %s'     % obs_spec.spec_short_fname)
+	print('Fitting %i components with transitions: ' % obs_spec.n_component)
+	for i in xrange(len(obs_spec.transitions_params_array)):
+		for j in xrange(len(obs_spec.transitions_params_array[i])):
+			if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
+				for k in xrange(len(obs_spec.transitions_params_array[i][j])):
+					rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
+					print('    Transitions Wavelength: %.3f' % rest_wavelength)
+			else:
+				print('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
+				exit()
 
-    print('Selected data wavelegnth region:')
-    for i in xrange(len(obs_spec.wave_begins)):
-        print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i])) 
-    print('\n')
-
+	print('Selected data wavelegnth region:')
+	for i in xrange(len(obs_spec.wave_begins)):
+		print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i])) 
+	print('\n')

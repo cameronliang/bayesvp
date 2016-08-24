@@ -57,6 +57,7 @@ def process_model(obs_spec,redshift,dv):
     n_params = len(list(set(temp_flags)))
     samples = mcmc_chain[burnin:, :, :].reshape((-1, n_params))
     alpha = np.median(samples,axis=0)
+    
     model_flux = generic_prediction(alpha,obs_spec)
 
     # Write best fit parameters summary file
@@ -66,7 +67,7 @@ def process_model(obs_spec,redshift,dv):
     write_model_spectrum(obs_spec,model_flux)
 
     # Plot the best fit for visual comparison
-    rest_wave = obs_spec.transitions_params_array[0][0][0][1]        
+    rest_wave = obs_spec.transitions_params_array[0][0][0][1]
     plot_model_comparison(obs_spec,model_flux,rest_wave,redshift,dv)
 
 

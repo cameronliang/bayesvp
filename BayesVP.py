@@ -4,7 +4,8 @@ import sys,os
 import kombine
 
 from Utilities import determine_autovp, print_config_params,\
-					BIC_simple_estimate, printline 
+					model_info_criterion, Local_density_LM,\
+					printline,Compare_Model 
 
 def create_walkers_init(obs_spec):
 	"""
@@ -122,7 +123,7 @@ def main(config_fname):
 	auto_vp, n_component_min, n_component_max = determine_autovp(config_fname)
 
 	if auto_vp:
-		bic = np.zeros(n_component_max-n_component_min+1)
+		model_evidence = np.zeros(n_component_max-n_component_min+1)
 		for n in xrange(n_component_max-n_component_min+1):
 			printline()
 			print('Fitting %d components.. ' % (n + n_component_min))
@@ -139,25 +140,32 @@ def main(config_fname):
 			obs_spec.spec_lsf()
 			obs_spec.priors_and_init()
 
-			# Ouput filename for chain
+			# Run MCMC 
 			run_kombine_mcmc(obs_spec,obs_spec.chain_fname)
 
 			# Input the chian filename and number of data points
-			bic[n] = BIC_simple_estimate(obs_spec.chain_fname,obs_spec)
-
+			model_evidence[n] = model_info_criterion(obs_spec.chain_fname,obs_spec)
 			# compare with the previous fit 
 			if n >= 1:
 				# Stop fitting the previous bic is smaller (i.e better)
-				if bic[n-1] <= bic[n]:
+				if n < n_component_max-1:
 					components_count = np.arange(n_component_min,n_component_max+1)
-					index = np.where(bic[:n+1] == np.min(bic[:n+1]))[0]
+					if obs_spec.model_selection == 'odds' or obs_spec.model_selection == 'bayes':   
+						index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
+					else:
+						index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
 
-					printline()
-					print('Based on BIC %d-component model is the best model' % components_count[index])
-					printline()
-					
-					np.savetxt(obs_spec.mcmc_outputpath + '/bic_'+obs_spec.chain_short_fname[:-1]+'.dat',
-					np.c_[components_count[:n+1],bic[:n+1]],fmt=('%d','%.4f'),header='nComponents\tBICValues')
+					# Compars BIC/AIC/Odds ratios
+					if Compare_Model(model_evidence[n-1], model_evidence[n],obs_spec.model_selection):
+						printline()
+						print('Based on %s: %d-component model is the best model' % (obs_spec.model_selection,components_count[index]))
+						printline()
+						np.savetxt(obs_spec.mcmc_outputpath + '/' + obs_spec.model_selection +'_'+obs_spec.chain_short_fname[:-1]+'.dat',
+						np.c_[components_count[:n+1],model_evidence[:n+1]],fmt=('%d','%.4f'),header='nComponents\tValues')
+						break
+				else:
+					np.savetxt(obs_spec.mcmc_outputpath + '/'+obs_spec.model_selection+'_'+obs_spec.chain_short_fname[:-1]+'.dat',
+					np.c_[components_count[:n+1],model_evidence[:n+1]],fmt=('%d','%.4f'),header='nComponents\tValues')
 					break
 					
 	else:

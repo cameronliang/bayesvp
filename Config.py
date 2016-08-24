@@ -72,6 +72,10 @@ class DefineParams:
                 self.nwalkers = int(line[1])
                 self.nsteps = int(line[2])
                 self.nthreads = int(line[3])
+                if 'bic' or 'aic' in line:
+                    self.model_selection = line[4]
+                else:
+                    self.model_selection = 'bic'
 
         self.mcmc_outputpath   = self.spec_path + '/vpfit_mcmc'
         if not os.path.isdir(self.mcmc_outputpath):
@@ -196,6 +200,7 @@ class DefineParams:
                 temp_redshift = line[5][:-1]
             else:
                 temp_redshift = line[5]
+                
 
             transitions_params_array.append([])
             # Each component gets a set of all of the transitions data
@@ -329,6 +334,5 @@ if __name__ == '__main__':
     obs_spec.fitting_data()
     obs_spec.fitting_params()
     obs_spec.spec_lsf()
-    obs_spec.priors_and_init()
-    
+    obs_spec.priors_and_init()    
     print_config_params(obs_spec)

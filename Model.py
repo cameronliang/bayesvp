@@ -240,7 +240,6 @@ def generic_prediction(alpha,obs_spec_obj):
 
                     # Convolve (potentially )LSF for each region 
                     spec.append(convolve_lsf(model_flux,obs_spec_obj.lsf[k])) 
-
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
