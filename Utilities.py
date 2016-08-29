@@ -2,6 +2,7 @@ import numpy as np
 import re
 from sklearn.neighbors import KernelDensity
 from scipy.special import gamma
+from sklearn.neighbors import BallTree
 
 ###############################################################################
 # Model Comparisons: Bayesian Evidence / BIC / AIC  
@@ -79,45 +80,43 @@ def model_info_criterion(chain_fname,obs_spec_obj):
 	see Eqn (4.17) Ivezic+ "Statistics, Data Mining and Machine Learning 
 	in Astronomy" (2014)
 	"""
-	from Likelihood import Posterior
-	# Define the posterior function based on data
-	lnprob = Posterior(obs_spec_obj)
 
-	data_length = len(obs_spec_obj.flux)
+	if obs_spec_obj.model_selection == 'odds' or \
+	   obs_spec_obj.model_selection == 'BF'   or \
+	   obs_spec_obj.model_selection == 'bf':
+		return Local_density_BF(chain_fname,obs_spec_obj) 
 
-	chain = np.load(chain_fname + '.npy')
-	n_params = np.shape(chain)[-1]
-	samples = chain.reshape((-1,n_params))
-	medians = np.median(samples,axis=0) # shape = (n_params,)
-
-	log10_L = lnprob(medians)
-	lnL = log10_L /np.log10(2.7182818)
-	if obs_spec_obj.model_selection == 'aic':
-		return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
-	elif obs_spec_obj.model_selection == 'bic':
-		return -2*lnL + n_params*np.log(data_length)
 	else:
-		print('model_selection is not defined to either be aic or bic')
-		exit()
+		from Likelihood import Posterior
+		# Define the posterior function based on data
+		lnprob = Posterior(obs_spec_obj)
+
+		data_length = len(obs_spec_obj.flux)
+
+		chain = np.load(chain_fname + '.npy')
+		n_params = np.shape(chain)[-1]
+		samples = chain.reshape((-1,n_params))
+		medians = np.median(samples,axis=0) # shape = (n_params,)
+
+		log10_L = lnprob(medians)
+		lnL = log10_L /np.log10(2.7182818)
+		if obs_spec_obj.model_selection == 'aic':
+			return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
+		elif obs_spec_obj.model_selection == 'bic':
+			return -2*lnL + n_params*np.log(data_length)
+	
+		else:
+			print('model_selection is not defined to either be aic or bic')
+			exit()
 
 #----------------------------------------------------------------------
-# credit: AstroML (see fig 5.2.4)
+# AstroML (see fig 5.2.4)
 # Esitmate Odds ratios in a random subsample of the chains in MCMC 
 #----------------------------------------------------------------------
 
-def get_logp(S, model):
-    """compute log(p) given a pyMC model"""
-    M = pymc.MAP(model)
-    traces = np.array([S.trace(s)[:] for s in S.stochastics])
-    logp = np.zeros(traces.shape[1])
-    for i in range(len(logp)):
-        logp[i] = -M.func(traces[:, i])
-    return logp
-
-
-def estimate_bayes_factor(traces, logp, r=0.05, return_list=False):
+def estimate_bayes_factor(traces, logp, r=0.05):
     """Estimate the bayes factor using the local density of points"""
-    D, N = traces.shape
+    D, N = traces.shape # [ndim,number of steps in chain]
 
     # compute volume of a D-dimensional sphere of radius r
     Vr = np.pi ** (0.5 * D) / gamma(0.5 * D + 1) * (r ** D)
@@ -126,43 +125,43 @@ def estimate_bayes_factor(traces, logp, r=0.05, return_list=False):
     bt = BallTree(traces.T)
     count = bt.query_radius(traces.T, r=r, count_only=True)
 
+	# BF = N*p/rho
     BF = logp + np.log(N) + np.log(Vr) - np.log(count)
 
-    if return_list:
-        return BF
-    else:
-        p25, p50, p75 = np.percentile(BF, [25, 50, 75])
-        return p50, 0.7413 * (p75 - p25)
+    p25, p50, p75 = np.percentile(BF, [25, 50, 75])
+    return p50, 0.7413 * (p75 - p25)
 
 ########################################################################
 
-def Local_density_LM(chain_fname,obs_spec_obj):
+def Local_density_BF(chain_fname,obs_spec_obj):
 	"""
-	L(M) based on local density estimate
+	Bayes Factor: L(M) based on local density estimate
 	See (5.127) in Ivezic+ 2014
 
-	# Assume we need only L(M) at a given pt.  
+	# Assume we need only L(M) at a given pt.
 	"""
 	from Likelihood import Posterior
-	
+	from kombine.clustered_kde import ClusteredKDE
+
 	# Define the posterior function based on data
 	lnprob = Posterior(obs_spec_obj)
 	chain = np.load(chain_fname + '.npy')
 	n_params = np.shape(chain)[-1]
 	samples = chain.reshape((-1,n_params))
-	medians = np.median(samples,axis=0) # shape = (n_params,)
+	
+	
+	# KDE of the sample
+	N_sample = 200
+	ksample = ClusteredKDE(samples)
+	sub_sample = ksample.draw(N_sample) # change 20 to non-magic number
+	#logp = ksample.logpdf(sub_sample)
 
-	# Evaluate the Posterior
-	log10_posterior = lnprob(medians)
+	logp = np.zeros(N_sample)
+	for i in xrange(N_sample):
+		logp[i] = lnprob(sub_sample[i])
 
-	# kernel density estimate of the local probability at median
-	kde = KernelDensity(kernel='gaussian',bandwidth=1).fit(samples)
-	#log_rho = float(kde.score_samples(medians.reshape(1,-1))) 
-	log_rho = kde.score(medians.reshape(1,-1))
-	logN = np.log10(samples.shape[0])
-	print 'logN', logN
-	log10_LM = logN + (log10_posterior - log_rho) 
-	return log10_LM
+	BF,dBF = estimate_bayes_factor(sub_sample.T,logp)
+	return BF
 
 def Compare_Model(L1,L2,model_selection):
 	"""
@@ -172,9 +171,12 @@ def Compare_Model(L1,L2,model_selection):
 	For Bayes Factor/Odds ratio, it is the log10(L1/L2) being 
 	compared. 
 	"""
-	if model_selection == 'bic' or model_selection == 'aic':
+	if model_selection == 'bic' or \
+	   model_selection == 'aic':
 		return L1 <= L2
-	elif model_selection == 'bayes' or model_selection == 'odds':
+	elif model_selection == 'BF' or \
+		 model_selection == 'bf' or \
+		 model_selection == 'odds':
 		return L1-L2 >= 0
 
 #----------------------------------------------------------------------
@@ -284,9 +286,6 @@ def gr_indicator():
 	Gelman-Rubin Indicator 
 	"""
 	return 0
-
-
-
 
 ###############################################################################
 # Others

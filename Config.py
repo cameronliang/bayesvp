@@ -72,7 +72,7 @@ class DefineParams:
                 self.nwalkers = int(line[1])
                 self.nsteps = int(line[2])
                 self.nthreads = int(line[3])
-                if 'bic' or 'aic' in line:
+                if len(line) == 5:
                     self.model_selection = line[4]
                 else:
                     self.model_selection = 'bic'

@@ -4,8 +4,7 @@ import sys,os
 import kombine
 
 from Utilities import determine_autovp, print_config_params,\
-					model_info_criterion, Local_density_LM,\
-					printline,Compare_Model 
+					  model_info_criterion,Compare_Model,printline 
 
 def create_walkers_init(obs_spec):
 	"""
@@ -150,7 +149,9 @@ def main(config_fname):
 				# Stop fitting the previous bic is smaller (i.e better)
 				if n < n_component_max-1:
 					components_count = np.arange(n_component_min,n_component_max+1)
-					if obs_spec.model_selection == 'odds' or obs_spec.model_selection == 'bayes':   
+					if obs_spec.model_selection == 'odds' or \
+					   obs_spec.model_selection == 'bf'   or \
+					   obs_spec.model_selection == 'BF':   
 						index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
 					else:
 						index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
