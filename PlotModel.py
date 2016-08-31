@@ -17,6 +17,8 @@ def plot_model_comparison(config_params_obj,model_flux,rest_wave,redshift,dv):
     obs_spec_wave = config_params_obj.wave / (1+redshift) 
     obs_spec_dv = c*(obs_spec_wave - rest_wave) / rest_wave
     pl.rc('text', usetex=True)
+
+    pl.figure(1)
     pl.step(obs_spec_dv,config_params_obj.flux,'k',label=r'$\rm Data$')
     pl.step(obs_spec_dv,model_flux,'b',lw=2,label=r'$\rm Best\,Fit$')
     pl.step(obs_spec_dv,config_params_obj.dflux,'r')
@@ -29,8 +31,25 @@ def plot_model_comparison(config_params_obj,model_flux,rest_wave,redshift,dv):
     pl.legend(loc=3)
     
     pl.savefig(config_params_obj.spec_path + '/vpfit_mcmc/bestfit_' + config_params_obj.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
+    pl.clf()
 
     print('Written %s/vpfit_mcmc/best_fit_%s.pdf\n' % (config_params_obj.spec_path,config_params_obj.chain_short_fname))
+
+def plot_gr_indicator(config_params_obj):
+    gr_fname = config_params_obj.chain_fname + '_GR.dat'
+    data = np.loadtxt(gr_fname,unpack=True)
+    steps = data[0]; grs = data[1:]
+    
+    pl.figure(1,figsize=(6,6))
+    for i in xrange(len(grs)):
+        pl.plot(steps,grs[i],label=str(i))
+    pl.legend(loc='best')
+    pl.xscale('log')
+
+    pl.xlabel(r'$N(\rm{steps})$')
+    pl.ylabel(r'$R$')
+    pl.savefig(config_params_obj.spec_path + '/vpfit_mcmc/bestfit_' + config_params_obj.chain_short_fname + '_GR.pdf',bbox_inches='tight',dpi=100)
+    
 
 def write_model_spectrum(config_params_obj,model_flux):
     np.savetxt(config_params_obj.mcmc_outputpath + 
@@ -44,6 +63,8 @@ def write_model_summary(config_params_obj):
     mcmc_chain_fname = config_params_obj.chain_fname + '.npy'
     output_summary_fname = config_params_obj.spec_path + '/vpfit_mcmc/bestfit_summary_'+config_params_obj.chain_short_fname+'.dat'
     write_mcmc_stats(mcmc_chain_fname,output_summary_fname)
+
+
 
 def process_model(obs_spec,redshift,dv):
     """Quick comparison and diagnostic of the best fit model"""
@@ -70,6 +91,8 @@ def process_model(obs_spec,redshift,dv):
     rest_wave = obs_spec.transitions_params_array[0][0][0][1]
     plot_model_comparison(obs_spec,model_flux,rest_wave,redshift,dv)
 
+    # plot the evolution of GR indicator as a function of steps
+    plot_gr_indicator(obs_spec)
 
 def main(config_fname,redshift,dv):
     from Config import DefineParams

@@ -281,18 +281,45 @@ def convolve_lsf(flux,lsf):
 ###############################################################################
 
 
-def gr_indicator():
+def gr_indicator(chain):
 	"""
-	Gelman-Rubin Indicator 
+	Gelman-Rubin Indicator
+
+	Parameters:
+	-----------
+	chain: array_like
+		Multi-dimensional array of the chain with shape (nsteps,nwalkers,ndim)
+
+	Returns
+	-----------
+	Rgrs: array_like
+		Gelman-Rubin indicator with length of (ndim)
 	"""
-	return 0
+	nsteps,nwalkers,ndim = np.shape(chain)
+	nsteps = float(nsteps); nwalkers = float(nwalkers)
+    
+	Rgrs = np.zeros(ndim)
+	for n in xrange(ndim):
+		x = chain[:,:,n]
+		# average of within-chain variance over all walkers
+		W = np.mean(np.var(x,axis=0)) # i.e within-chain variance
+		mean_x_per_chain = np.mean(x,axis=0)
+		mean_x = np.mean(mean_x_per_chain) 
+
+		# Variance between chains 
+		B = nsteps*np.sum((mean_x_per_chain - mean_x)**2) / (nwalkers-1)
+		var_per_W = 1 - 1./nsteps + B/(W*nsteps) 
+
+		Rgrs[n] = ((nwalkers+1)/nwalkers) * var_per_W - (nsteps-1)/(nwalkers*nsteps)
+        
+	return Rgrs 
 
 ###############################################################################
 # Others
 ###############################################################################
 
 def printline():
-	print("-------------------------------------------------------------------")
+	print("---------------------------------------------------------------------")
 
 def print_config_params(obs_spec):
 

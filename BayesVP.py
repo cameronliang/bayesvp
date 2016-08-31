@@ -4,7 +4,8 @@ import sys,os
 import kombine
 
 from Utilities import determine_autovp, print_config_params,\
-					  model_info_criterion,Compare_Model,printline 
+					  model_info_criterion,Compare_Model,\
+					  gr_indicator,printline 
 
 def create_walkers_init(obs_spec):
 	"""
@@ -97,6 +98,21 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 	np.save(chain_filename_ncomp + '.npy', sampler.chain)
 	print("Written chain: %s.npy\n" % chain_filename_ncomp)
 	printline()
+
+	# Compute Gelman-Rubin Indicator
+	dnsteps = int(obs_spec.nsteps*0.005)
+	n_steps = []; Rgrs = []	
+	for n in xrange(dnsteps*10,obs_spec.nsteps):
+		if n % dnsteps == 0:
+			Rgrs.append(gr_indicator(sampler.chain[:n,:,:]))
+			n_steps.append(n)
+	n_steps = np.array(n_steps)
+	Rgrs    = np.array(Rgrs)
+
+	np.savetxt(chain_filename_ncomp+ '_GR.dat',np.c_[n_steps,Rgrs],fmt='%.5f',			   header='col1=steps\tcoln=gr_indicator')
+
+	return 
+
 
 def main(config_fname):
 	"""
