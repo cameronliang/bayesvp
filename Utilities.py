@@ -215,24 +215,20 @@ def compute_stats(x):
 	return xmed,xm,xsd,xcfl11, xcfl12, xcfl21,xcfl22
     
 
-def read_mcmc_fits(mcmc_chain_fname,para_name):
+def read_mcmc_fits(config_params_obj,para_name):
     
 	my_dict = {'logN':0, 'b':1,'z':2}
 	col_num = my_dict[para_name]
-	chain = np.load(mcmc_chain_fname)
-	burnin_fraction = 0.5
-	burnin = int(np.shape(chain)[0]*burnin_fraction)
+	chain = np.load(config_params_obj.chain_fname + '.npy')
+	burnin = compute_burin_GR(config_params_obj.chain_fname + '_GR.dat')
 	x = chain[burnin:,:,col_num].flatten()
 	xmed,xm,xsd,xcfl11, xcfl12, xcfl21,xcfl22 = compute_stats(x)
-
 	return xmed 
 
-def write_mcmc_stats(mcmc_chain_fname,output_fname):
-	burnin_fraction = 0.5
-	chain = np.load(mcmc_chain_fname)
+def write_mcmc_stats(config_params_obj,output_fname):
+	chain = np.load(config_params_obj.chain_fname + '.npy')
+	burnin = compute_burin_GR(config_params_obj.chain_fname + '_GR.dat')
 	
-	burnin       = int(np.shape(chain)[0]*burnin_fraction)
-
 	f = open(output_fname,'w')
 	f.write('x_med\tx_mean\tx_std\tx_cfl11\tx_cfl12\t x_cfl21\tx_cfl22\n')
 	
@@ -313,6 +309,32 @@ def gr_indicator(chain):
 		Rgrs[n] = ((nwalkers+1)/nwalkers) * var_per_W - (nsteps-1)/(nwalkers*nsteps)
         
 	return Rgrs 
+
+def compute_burin_GR(gr_fname,gr_threshold=1.05):
+	"""
+	Calculate the steps where the chains are 
+	converged given a Gelman-Rubin (GR) threshod. 
+
+	Parameters
+	----------
+	gr_fname:str
+		Full path to the GR file with first column as steps
+		and the rest as the values of GR for each model parameter
+	gr_threshold:float
+		The threshold for chains to be considered as converged.
+		Default value = 1.05
+	Returns
+	----------
+	burnin_steps: int
+		The step number where the least converged parameter has 
+		converged; (maxiumn of the steps of all parameters) 
+	"""
+	data = np.loadtxt(gr_fname,unpack=True)
+	steps = data[0]; grs = data[1:]
+	indices = np.argmax(grs<=gr_threshold,axis=1)
+	# burnin_steps
+	return int(np.max(steps[indices]))
+
 
 ###############################################################################
 # Others

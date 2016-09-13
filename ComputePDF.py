@@ -1,27 +1,28 @@
 import numpy as np
 import pylab as pl
-import sys,os
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
+import sys
+import os
 
 from Config import DefineParams
+from Utilities import compute_burin_GR
+
 
 def derivative_cdf(x,y):
     dx=x[1:] - x[:-1]
     diff = (y[1:]-y[:-1]) /dx
     return diff
 
-def extract_chain(mcmc_chain_fname,para_name):
+def extract_chain(obs_spec,para_name):
     """
     This assumes simple single component model
     with parameter [logN, b, z]
     """
-    burnin_fraction_chain = 0.5
-    chain = np.load(mcmc_chain_fname)
-    burnin  = int(np.shape(chain)[0]*burnin_fraction_chain)
+    chain = np.load(obs_spec.chain_fname + '.npy')
     my_dict = {'logN':0, 'b':1,'z':2}
     col_num = my_dict[para_name]
-    
+    burnin = compute_burin_GR(obs_spec.chain_fname + '_GR.dat')
     # return 1D chain of parameter x 
     return chain[burnin:,:,col_num].flatten()
 
@@ -168,7 +169,7 @@ def main(config_fname):
     ouput_path = obs_spec.mcmc_outputpath + '/posterior/'
     if not os.path.isdir(ouput_path):
         os.mkdir(ouput_path)
-    x = extract_chain(obs_spec.chain_fname + '.npy',x_name)
+    x = extract_chain(obs_spec,x_name)
     x,pdf = smooth_cdf_deriv_pdf(x,left_boundary_x,right_boundary_x,ouput_path,ion_name,plotting=True)
     write_pdf(x,pdf,ouput_path,x_name,ion_name)
 

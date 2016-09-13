@@ -3,7 +3,7 @@ import pylab as pl
 import sys
 
 from Model import generic_prediction
-from Utilities import write_mcmc_stats
+from Utilities import write_mcmc_stats, compute_burin_GR
 
 def plot_model_comparison(config_params_obj,model_flux,rest_wave,redshift,dv):
     c = 299792.485 # [km/s]
@@ -62,20 +62,21 @@ def write_model_spectrum(config_params_obj,model_flux):
 def write_model_summary(config_params_obj):
     mcmc_chain_fname = config_params_obj.chain_fname + '.npy'
     output_summary_fname = config_params_obj.spec_path + '/vpfit_mcmc/bestfit_summary_'+config_params_obj.chain_short_fname+'.dat'
-    write_mcmc_stats(mcmc_chain_fname,output_summary_fname)
+    write_mcmc_stats(config_params_obj,output_summary_fname)
 
 
 
 def process_model(obs_spec,redshift,dv):
     """Quick comparison and diagnostic of the best fit model"""
-    burnin = 0.5 * obs_spec.nsteps #  Hardwired burnin fraction = 0.5
-
+    
     mcmc_chain_fname = obs_spec.chain_fname + '.npy'
     mcmc_chain = np.load(mcmc_chain_fname)
 
     # Obtain best fit parameters and model flux (medians of the chains)
     temp_flags = obs_spec.vp_params_flags[~np.isnan(obs_spec.vp_params_flags)]
     n_params = len(list(set(temp_flags)))
+
+    burnin = compute_burin_GR(obs_spec.chain_fname + '_GR.dat')
     samples = mcmc_chain[burnin:, :, :].reshape((-1, n_params))
     alpha = np.median(samples,axis=0)
     
