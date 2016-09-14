@@ -1,26 +1,31 @@
 ########################################################################################
 #
-#   		(c) Cameron J. Liang
-#		    University of Chicago
-#     		jwliang@oddjob.uchicago.edu
-#       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
+###   		(c) Cameron J. Liang
+###		    University of Chicago
+###     	    jwliang@oddjob.uchicago.edu
+###     	    cameron.liang@gmail.com
+###       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
 ########################################################################################
 
+BayseVP requires the following libraries:
 
-MCMC VPFIT assumes standard Python libraries: numpy, scipy, matplotlib and pyfits. 
-I recommend installing the Enthought Canopy which comes with all the scientific 
-libraries you need. You can find it here: https://www.enthought.com/products/canopy/
+1) numpy, scipy, matplotlib and pyfits. 
 
-In addition, you will need an MCMC sampler. In Vogit profiles fitting, we often need to fit multiple components with many parameters, we will use the sampler KOMBINE developed by Ben Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
+2) sklearn
 
-pip -U install KOMBINE
+Python distributions:
 
-Another useful sampler is the Goodman-Weare Affine Parameter Sampler. The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
+[Anaconda](https://www.continuum.io/downloads)
 
-pip -U install emcee 
+[Enthought Canopy](https://www.enthought.com/products/canopy/)
 
-pip -U install triangle
+In addition, you will need an MCMC sampler. In Vogit profiles fitting, we often need to fit multiple components with many parameters, we will use the sampler [KOMBINE](http://home.uchicago.edu/~farr/kombine/kombine.html) developed by Ben Far and Will Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
 
+pip install --user kombine
+
+Another useful sampler is the Goodman-Weare Affine Parameter Sampler [emcee](http://dan.iel.fm/emcee/current/). The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
+
+pip install --user emcee 
 
 ------------------------------------------------------------------------------------------
 
@@ -40,29 +45,27 @@ Notes/Tips/Cautions:
 
 Example config file format:
 
-\# test for saturated HI 					# Comment
+**\# test for double component CIV fit ** 			Comment for the config file
 
-/home/user_xxxx/tests 						# Path to spectrum
+**/home/user_xxxx/tests ** 					Path to spectrum 
 
-mcmc_chain  								# Output fname (without extension, will add .npy internally)
+**mcmc_chain**  						Output fname (without extension, will add .npy internally)
 
-200 1000 16 								# nwalkers, nsteps, nthreads
+**mcmc 200 1000 16 bic kombine** 				nwalkers, nsteps, nthreads, model selection method, sampler
 
-%% uv_qso.spec 1546.8 1552.2 1333.5 1335  # spectrum_fname, [wave_start,wave_end], [..., ...], etc
+**%% uv_qso.spec 1546.8 1552.2 1333.5 1335**  # spectrum_fname, [wave_start,wave_end], [..., ...], etc
 
-% C IV 13.5 30 0.0001   					# Atom state logN b z
+**% C IV 13.5 30 0.0001**   				       	Atom state logN b z
 
-% C IV 14 10 0.0007
+**% C IV 14 10 0.0007**						Includes a 2nd component
 
-lsf filename 							  	# Line Spread Function; Specfy keyword 'lsf' and filename; 
+**lsf filename** 			Line Spread Function; Specfy keyword 'lsf' and filename; Can be omitted if no LSF is needed
 
-logN min_logN max_logN  				# These are priors and walker initializations
-b    min_b    max_b 
-z    mean_z   dv_range
+**logN min_logN max_logN**  			                These are priors and walker initializations
+**b    min_b    max_b **
+**z    mean_z   dv_range**
 
 ------------------------------------------------------------------------------------------
 
 Features to be added/planned: 
-
 * Thermally link b parameters
-* Convergence (GR indicator)
