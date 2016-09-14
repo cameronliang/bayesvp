@@ -52,7 +52,9 @@ Example config file format:
 
 **/home/user_xxxx/tests** 					Path to spectrum 
 
-**mcmc_chain**  						Output fname (without extension, will add .npy internally)
+**mcmc_chain**  						Output filename (without extension, will add .npy internally)
+
+**! auto n**  							Automatic Fit up to n components and choose best fit model
 
 **mcmc 200 1000 16 bic kombine** 				nwalkers, nsteps, nthreads, model selection method, sampler
 
@@ -60,7 +62,7 @@ Example config file format:
 
 **% C IV 13.5 30 0.0001**   				       	Atom state logN b z
 
-**% C IV 14 10 0.0007**						Includes a 2nd component
+**% C IV 14 10 0.0007**						Includes a 2nd component (not needed if auto is activated)
 
 **lsf filename** 			Line Spread Function; Specfy keyword 'lsf' and filename; Can be omitted if no LSF is needed
 
