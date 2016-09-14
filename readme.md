@@ -1,17 +1,20 @@
 ########################################################################################
-#
+###
 ###   		(c) Cameron J. Liang
-###		    University of Chicago
+###		    The University of Chicago
 ###     	    jwliang@oddjob.uchicago.edu
-###     	    cameron.liang@gmail.com
 ###       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
 ########################################################################################
+
+------------------------------------------------------------------------------------------
 
 BayseVP requires the following libraries:
 
 1) numpy, scipy, matplotlib and pyfits. 
 
 2) sklearn
+
+3) MCMC Sampler
 
 Python distributions:
 
@@ -45,9 +48,9 @@ Notes/Tips/Cautions:
 
 Example config file format:
 
-**\# test for double component CIV fit ** 			Comment for the config file
+**# test for double component CIV fit** 			Comment for the config file
 
-**/home/user_xxxx/tests ** 					Path to spectrum 
+**/home/user_xxxx/tests** 					Path to spectrum 
 
 **mcmc_chain**  						Output fname (without extension, will add .npy internally)
 
