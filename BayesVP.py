@@ -2,6 +2,7 @@ import numpy as np
 import time
 import sys,os
 import kombine
+import emcee
 
 from Utilities import determine_autovp, print_config_params,\
 					  model_info_criterion,Compare_Model,\
@@ -59,7 +60,7 @@ def create_walkers_init(obs_spec):
 
 	return np.transpose(p0)
 
-def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
+def bvp_mcmc(obs_spec,chain_filename_ncomp):
 	"""
 	Run MCMC and save the chain based on parameters defined 
 	in config file. 
@@ -88,14 +89,17 @@ def run_kombine_mcmc(obs_spec,chain_filename_ncomp):
 	# Define the natural log of the posterior 
 	lnprob = Posterior(obs_spec)
 
-	# Set up the sampler
-	sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
-
-	# First do a rough burn in based on accetance rate.
-	p_post_q = sampler.burnin(p0)
-	p_post_q = sampler.run_mcmc(obs_spec.nsteps)
-	
-	np.save(chain_filename_ncomp + '.npy', sampler.chain)
+	if obs_spec.mcmc_sampler == 'emcee':
+		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, threads=obs_spec.nthreads) 
+		sampler.run_mcmc(p0,obs_spec.nsteps)
+		np.save(chain_filename_ncomp + '.npy', np.swapaxes(sampler.chain,0,1))
+	else:
+		# Set up the sampler
+		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
+		# First do a rough burn in based on accetance rate.
+		p_post_q = sampler.burnin(p0)
+		p_post_q = sampler.run_mcmc(obs_spec.nsteps)
+		np.save(chain_filename_ncomp + '.npy', sampler.chain)
 	print("Written chain: %s.npy\n" % chain_filename_ncomp)
 	printline()
 
@@ -156,7 +160,7 @@ def main(config_fname):
 			obs_spec.priors_and_init()
 
 			# Run MCMC 
-			run_kombine_mcmc(obs_spec,obs_spec.chain_fname)
+			bvp_mcmc(obs_spec,obs_spec.chain_fname)
 
 			# Input the chian filename and number of data points
 			model_evidence[n] = model_info_criterion(obs_spec.chain_fname,obs_spec)
@@ -184,7 +188,7 @@ def main(config_fname):
 					np.savetxt(obs_spec.mcmc_outputpath + '/'+obs_spec.model_selection+'_'+obs_spec.chain_short_fname[:-1]+'.dat',
 					np.c_[components_count[:n+1],model_evidence[:n+1]],fmt=('%d','%.4f'),header='nComponents\tValues')
 					break
-					
+
 	else:
 		# Load config parameter object 
 		obs_spec = DefineParams(config_fname)
@@ -197,7 +201,8 @@ def main(config_fname):
 		print_config_params(obs_spec)
 		
 		# Run fit as specified in config
-		run_kombine_mcmc(obs_spec,obs_spec.chain_fname)	
+		print obs_spec.mcmc_sampler
+		bvp_mcmc(obs_spec,obs_spec.chain_fname)	
 
 if __name__ == '__main__':
 

@@ -70,12 +70,19 @@ class DefineParams:
                 self.chain_short_fname = line[1]
             elif 'mcmc_params' in line or 'mcmc' in line:
                 self.nwalkers = int(line[1])
-                self.nsteps = int(line[2])
+                self.nsteps   = int(line[2])
                 self.nthreads = int(line[3])
-                if len(line) == 5:
-                    self.model_selection = line[4]
-                else:
-                    self.model_selection = 'bic'
+
+                # Default
+                self.model_selection = 'bic'      
+                self.mcmc_sampler    = 'kombine'
+                
+                # Change keys if defined in config 
+                for key in line[3:]:
+                    if key in ['kombine','emcee']:
+                        self.mcmc_sampler = key
+                    elif key in ['aic','bic','bf']:
+                        self.model_selection = key       
 
         self.mcmc_outputpath   = self.spec_path + '/vpfit_mcmc'
         if not os.path.isdir(self.mcmc_outputpath):
