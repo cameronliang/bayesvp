@@ -1,5 +1,15 @@
+################################################################################
+#
+# Utilities.py 		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Utility functions used throughout BayesVP      
+################################################################################
+
 import numpy as np
 import re
+import os
 from sklearn.neighbors import KernelDensity
 from scipy.special import gamma
 from sklearn.neighbors import BallTree
@@ -71,20 +81,17 @@ def determine_autovp(config_fname):
 	return auto_vp, n_component_min, n_component_max
 
 
-
-def model_info_criterion(chain_fname,obs_spec_obj):
+def model_info_criterion(obs_spec_obj):
 	"""
-	Use either BIC or AIC for model selection
+	Use either aic,bic or bayes factor for model selection
 
 	Aikake Information Criterion (AIC); 
 	see Eqn (4.17) Ivezic+ "Statistics, Data Mining and Machine Learning 
 	in Astronomy" (2014)
 	"""
 
-	if obs_spec_obj.model_selection == 'odds' or \
-	   obs_spec_obj.model_selection == 'BF'   or \
-	   obs_spec_obj.model_selection == 'bf':
-		return Local_density_BF(chain_fname,obs_spec_obj) 
+	if obs_spec_obj.model_selection in ('odds','bf','BF'):
+		return local_density_bf(obs_spec_obj) 
 
 	else:
 		from Likelihood import Posterior
@@ -93,7 +100,7 @@ def model_info_criterion(chain_fname,obs_spec_obj):
 
 		data_length = len(obs_spec_obj.flux)
 
-		chain = np.load(chain_fname + '.npy')
+		chain = np.load(obs_spec_obj.chain_fname + '.npy')
 		n_params = np.shape(chain)[-1]
 		samples = chain.reshape((-1,n_params))
 		medians = np.median(samples,axis=0) # shape = (n_params,)
@@ -109,61 +116,58 @@ def model_info_criterion(chain_fname,obs_spec_obj):
 			print('model_selection is not defined to either be aic or bic')
 			exit()
 
-#----------------------------------------------------------------------
-# AstroML (see fig 5.2.4)
-# Esitmate Odds ratios in a random subsample of the chains in MCMC 
-#----------------------------------------------------------------------
-
 def estimate_bayes_factor(traces, logp, r=0.05):
-    """Estimate the bayes factor using the local density of points"""
-    D, N = traces.shape # [ndim,number of steps in chain]
+	"""
+	Esitmate Odds ratios in a random subsample of the chains in MCMC
+	AstroML (see fig 5.2.4)
+	"""
+	
+	ndim, nsteps = traces.shape # [ndim,number of steps in chain]
 
-    # compute volume of a D-dimensional sphere of radius r
-    Vr = np.pi ** (0.5 * D) / gamma(0.5 * D + 1) * (r ** D)
+	# compute volume of a n-dimensional (ndim) sphere of radius r
+	Vr = np.pi ** (0.5 * ndim) / gamma(0.5 * ndim + 1) * (r ** ndim)
 
-    # use neighbor count within r as a density estimator
-    bt = BallTree(traces.T)
-    count = bt.query_radius(traces.T, r=r, count_only=True)
+	# use neighbor count within r as a density estimator
+	bt = BallTree(traces.T)
+	count = bt.query_radius(traces.T, r=r, count_only=True)
 
 	# BF = N*p/rho
-    BF = logp + np.log(N) + np.log(Vr) - np.log(count)
+	bf = logp + np.log(nsteps) + np.log(Vr) - np.log(count) #log10(bf)
 
-    p25, p50, p75 = np.percentile(BF, [25, 50, 75])
-    return p50, 0.7413 * (p75 - p25)
+	p25, p50, p75 = np.percentile(bf, [25, 50, 75])
+	return p50, 0.7413 * (p75 - p25)
 
 ########################################################################
 
-def Local_density_BF(chain_fname,obs_spec_obj):
+def local_density_bf(obs_spec_obj):
 	"""
 	Bayes Factor: L(M) based on local density estimate
-	See (5.127) in Ivezic+ 2014
+	See (5.127) in Ivezic+ 2014 (AstroML)
 
-	# Assume we need only L(M) at a given pt.
+	Assuming we need only L(M) at a given point.
 	"""
 	from Likelihood import Posterior
 	from kombine.clustered_kde import ClusteredKDE
 
 	# Define the posterior function based on data
 	lnprob = Posterior(obs_spec_obj)
-	chain = np.load(chain_fname + '.npy')
+	chain = np.load(obs_spec_obj.chain_fname + '.npy')
 	n_params = np.shape(chain)[-1]
 	samples = chain.reshape((-1,n_params))
-	
-	
-	# KDE of the sample
-	N_sample = 200
-	ksample = ClusteredKDE(samples)
-	sub_sample = ksample.draw(N_sample) # change 20 to non-magic number
-	#logp = ksample.logpdf(sub_sample)
 
-	logp = np.zeros(N_sample)
-	for i in xrange(N_sample):
+	# KDE estimate of the sample
+	n_sample = 200
+	ksample = ClusteredKDE(samples)
+	sub_sample = ksample.draw(n_sample) 
+
+	logp = np.zeros(n_sample)
+	for i in xrange(n_sample):
 		logp[i] = lnprob(sub_sample[i])
 
-	BF,dBF = estimate_bayes_factor(sub_sample.T,logp)
-	return BF
+	bf,dbf = estimate_bayes_factor(sub_sample.T,logp)
+	return bf
 
-def Compare_Model(L1,L2,model_selection):
+def compare_model(L1,L2,model_selection):
 	"""
 	Compare two Models L(M1) = L1 and L(M2) = L2. 
 	if return True L1 wins; otherwise L2 wins. 
@@ -171,18 +175,16 @@ def Compare_Model(L1,L2,model_selection):
 	For Bayes Factor/Odds ratio, it is the log10(L1/L2) being 
 	compared. 
 	"""
-	if model_selection == 'bic' or \
-	   model_selection == 'aic':
+
+	if model_selection in ('bic', 'aic'):
 		return L1 <= L2
-	elif model_selection == 'BF' or \
-		 model_selection == 'bf' or \
-		 model_selection == 'odds':
+	elif model_selection in ('odds', 'BF','bf'):
 		return L1-L2 >= 0
 
-#----------------------------------------------------------------------
+###############################################################################
 # Others 
-#----------------------------------------------------------------------
-def BIC_gaussian_kernel(chain_fname,data_length):
+###############################################################################
+def bic_gaussian_kernel(chain_fname,data_length):
 	"""
 	Bayesian information criterion
 	Only valid if data_length >> n_params
@@ -254,7 +256,7 @@ def write_mcmc_stats(config_params_obj,output_fname):
 
 def gaussian_kernel(std):
     var = std**2
-    size = 8*std +1 # this should gaurantee size to be odd.
+    size = 8*std +1 # this gaurantees size to be odd.
     x = np.linspace(-100,100,size)
     norm = 1/(2*np.pi*var)
     return norm*np.exp(-(x**2/(2*std**2)))
@@ -275,7 +277,6 @@ def convolve_lsf(flux,lsf):
 ###############################################################################
 # Convergence 
 ###############################################################################
-
 
 def gr_indicator(chain):
 	"""
@@ -310,7 +311,7 @@ def gr_indicator(chain):
         
 	return Rgrs 
 
-def compute_burin_GR(gr_fname,gr_threshold=1.05):
+def compute_burin_GR(gr_fname,gr_threshold=1.01):
 	"""
 	Calculate the steps where the chains are 
 	converged given a Gelman-Rubin (GR) threshod. 
@@ -340,26 +341,47 @@ def compute_burin_GR(gr_fname,gr_threshold=1.05):
 # Others
 ###############################################################################
 
+def get_transitions_params(atom,state,wave_start,wave_end,redshift):
+	"""
+	Extract the ionic and tranisiton properties based on the atom and 
+	the state, given the redshift and observed wavelength regime.
+
+	Parameters:
+	----------
+	atom: str
+		names of atoms of interests (e.g., 'H', 'C','Si')
+	state: str
+		ionization state of the atom in roman numerals (e.g., 'I', 'II')
+	wave_start: float
+		the minimum observed wavelength 
+	wave_end: float
+		the maximum observed wavelength
+	redshift: float
+		redshift of the absorption line
+	
+	Return:
+	----------
+	transitions_params_array: array_like
+		[oscilator strength, rest wavelength, dammping coefficient, mass of the atom] for all transitions within the wavelength interval. shape = (number of transitions, 4) 
+	"""
+	amu = 1.66053892e-24   # 1 atomic mass in grams
+
+	# Absolute path for BayseVP
+	data_path = os.path.dirname(os.path.abspath(__file__)) 
+	data_file = data_path + '/data/atom.dat'
+	atoms,states  = np.loadtxt(data_file, dtype=str,unpack=True,usecols=[0,1])
+	wave,osc_f,Gamma,mass = np.loadtxt(data_file,unpack=True,usecols=[2,3,4,5])
+	mass = mass*amu 
+
+	inds = np.where((atoms == atom) & 
+					(states == state) & 
+					(wave >= wave_start/(1+redshift)) & 
+					(wave < wave_end/(1+redshift)))[0]
+	if len(inds) == 0:
+		return np.empty(4)*np.nan
+	else:
+		return np.array([osc_f[inds],wave[inds],Gamma[inds], mass[inds]]).T
+
+
 def printline():
 	print("---------------------------------------------------------------------")
-
-def print_config_params(obs_spec):
-
-	print('\n')
-	print('Spectrum Path: %s'     % obs_spec.spec_path)
-	print('Spectrum name: %s'     % obs_spec.spec_short_fname)
-	print('Fitting %i components with transitions: ' % obs_spec.n_component)
-	for i in xrange(len(obs_spec.transitions_params_array)):
-		for j in xrange(len(obs_spec.transitions_params_array[i])):
-			if not np.isnan(obs_spec.transitions_params_array[i][j]).any():
-				for k in xrange(len(obs_spec.transitions_params_array[i][j])):
-					rest_wavelength = obs_spec.transitions_params_array[i][j][k][1] 
-					print('    Transitions Wavelength: %.3f' % rest_wavelength)
-			else:
-				print('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
-				exit()
-
-	print('Selected data wavelegnth region:')
-	for i in xrange(len(obs_spec.wave_begins)):
-		print('    (%.3f, %.3f)' % (obs_spec.wave_begins[i],obs_spec.wave_ends[i])) 
-	print('\n')

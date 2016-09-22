@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 import sys
 
 from Model import generic_prediction
@@ -98,10 +98,6 @@ def process_model(obs_spec,redshift,dv):
 def main(config_fname,redshift,dv):
     from Config import DefineParams
     obs_spec = DefineParams(config_fname)
-    obs_spec.fileio_mcmc_params()
-    obs_spec.fitting_data()
-    obs_spec.fitting_params()
-    obs_spec.spec_lsf()
 
     redshift = float(redshift)
     dv       = float(dv)

@@ -1,14 +1,22 @@
+################################################################################
+#
+# BayesVP.py 		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Perform maximum likelihood fit to data given the config file specification 
+# and output the MCMC chains     
+################################################################################
+
 import numpy as np
-import time
-import sys,os
-import kombine
-import emcee
+import sys
+import os
 
-from Utilities import determine_autovp, print_config_params,\
-					  model_info_criterion,Compare_Model,\
-					  gr_indicator,printline 
+from Config import DefineParams
+from Utilities import determine_autovp,model_info_criterion,\
+					  compare_model,gr_indicator,printline 
 
-def create_walkers_init(obs_spec):
+def _create_walkers_init(obs_spec):
 	"""
 	Initialize walkers with the free parameters
 
@@ -60,7 +68,7 @@ def create_walkers_init(obs_spec):
 
 	return np.transpose(p0)
 
-def bvp_mcmc(obs_spec,chain_filename_ncomp):
+def bvp_mcmc_single(obs_spec,chain_filename_ncomp = None):
 	"""
 	Run MCMC and save the chain based on parameters defined 
 	in config file. 
@@ -82,31 +90,37 @@ def bvp_mcmc(obs_spec,chain_filename_ncomp):
 	"""
 	from Likelihood import Posterior
 
+	if chain_filename_ncomp is None:
+		chain_filename_ncomp = obs_spec.chain_fname
+
 	# define the MCMC parameters.
-	p0 = create_walkers_init(obs_spec)
+	p0 = _create_walkers_init(obs_spec)
 	ndim = np.shape(p0)[1]
 
 	# Define the natural log of the posterior 
 	lnprob = Posterior(obs_spec)
 
 	if obs_spec.mcmc_sampler == 'emcee':
+		import emcee
 		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, threads=obs_spec.nthreads) 
 		sampler.run_mcmc(p0,obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', np.swapaxes(sampler.chain,0,1))
-	else:
-		# Set up the sampler
+	elif obs_spec.mcmc_sampler == 'kombine':
+		import kombine
 		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
 		# First do a rough burn in based on accetance rate.
 		p_post_q = sampler.burnin(p0)
 		p_post_q = sampler.run_mcmc(obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', sampler.chain)
+	else:
+		print('No MCMC sampler selected.\n')
 	print("Written chain: %s.npy\n" % chain_filename_ncomp)
 	printline()
 
 	# Compute Gelman-Rubin Indicator
-	dnsteps = int(obs_spec.nsteps*0.005)
+	dnsteps = int(obs_spec.nsteps*0.05)
 	n_steps = []; Rgrs = []	
-	for n in xrange(dnsteps*10,obs_spec.nsteps):
+	for n in xrange(dnsteps,obs_spec.nsteps):
 		if n % dnsteps == 0:
 			Rgrs.append(gr_indicator(sampler.chain[:n,:,:]))
 			n_steps.append(n)
@@ -118,7 +132,7 @@ def bvp_mcmc(obs_spec,chain_filename_ncomp):
 	return 
 
 
-def main(config_fname):
+def bvp_mcmc(config_fname):
 	"""
 	Run fixed number of component fit specified by the 
 	config file or make copies of the configs and run up 
@@ -137,7 +151,7 @@ def main(config_fname):
 		One or more chains for each MCMC run.  
 	"""
 
-	# Determine if config is set to autovp 
+	# Determine if config is set to automatically choose the best model 
 	# If so, create multiple configs file specified by n_component_max
 	auto_vp, n_component_min, n_component_max = determine_autovp(config_fname)
 
@@ -153,60 +167,41 @@ def main(config_fname):
 
 			# Load config parameter object 
 			obs_spec = DefineParams(config_fname_ncomp)
-			obs_spec.fileio_mcmc_params()
-			obs_spec.fitting_data()
-			obs_spec.fitting_params()
-			obs_spec.spec_lsf()
-			obs_spec.priors_and_init()
 
 			# Run MCMC 
-			bvp_mcmc(obs_spec,obs_spec.chain_fname)
+			bvp_mcmc_single(obs_spec,obs_spec.chain_fname)
 
-			# Input the chian filename and number of data points
-			model_evidence[n] = model_info_criterion(obs_spec.chain_fname,obs_spec)
+			# compute values of aic, bic or bf
+			model_evidence[n] = model_info_criterion(obs_spec)
+			components_count  = np.arange(n_component_min,n_component_max+1)
+
 			# compare with the previous fit 
-			if n >= 1:
-				# Stop fitting the previous bic is smaller (i.e better)
-				if n < n_component_max-1:
-					components_count = np.arange(n_component_min,n_component_max+1)
-					if obs_spec.model_selection == 'odds' or \
-					   obs_spec.model_selection == 'bf'   or \
-					   obs_spec.model_selection == 'BF':   
-						index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
-					else:
-						index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
+			if 0 < n <= n_component_max-1:
 
-					# Compars BIC/AIC/Odds ratios
-					if Compare_Model(model_evidence[n-1], model_evidence[n],obs_spec.model_selection):
-						printline()
-						print('Based on %s: %d-component model is the best model' % (obs_spec.model_selection,components_count[index]))
-						printline()
-						np.savetxt(obs_spec.mcmc_outputpath + '/' + obs_spec.model_selection +'_'+obs_spec.chain_short_fname[:-1]+'.dat',
-						np.c_[components_count[:n+1],model_evidence[:n+1]],fmt=('%d','%.4f'),header='nComponents\tValues')
-						break
-				else:
-					np.savetxt(obs_spec.mcmc_outputpath + '/'+obs_spec.model_selection+'_'+obs_spec.chain_short_fname[:-1]+'.dat',
+				if obs_spec.model_selection in ('odds','bf','BF'):   
+					index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
+
+				elif obs_spec.model_selection in ('aic','AIC', 'bic','BIC'):
+					index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
+
+				# Compars BIC/AIC/Odds ratios
+				if compare_model(model_evidence[n-1], model_evidence[n],obs_spec.model_selection):
+					printline()
+					print('Based on %s: %d-component model is the best model' % (obs_spec.model_selection,components_count[index]))
+					printline()
+					np.savetxt(obs_spec.mcmc_outputpath + '/' + obs_spec.model_selection +'_'+obs_spec.chain_short_fname[:-1]+'.dat',
 					np.c_[components_count[:n+1],model_evidence[:n+1]],fmt=('%d','%.4f'),header='nComponents\tValues')
 					break
-
 	else:
 		# Load config parameter object 
-		obs_spec = DefineParams(config_fname)
-		obs_spec.fileio_mcmc_params()
-		obs_spec.fitting_data()
-		obs_spec.fitting_params()
-		obs_spec.spec_lsf()
-		obs_spec.priors_and_init()
-		
-		print_config_params(obs_spec)
+		obs_spec = DefineParams(config_fname)		
+		obs_spec.print_config_params()
 		
 		# Run fit as specified in config
-		print obs_spec.mcmc_sampler
-		bvp_mcmc(obs_spec,obs_spec.chain_fname)	
+		bvp_mcmc_single(obs_spec)	
 
 if __name__ == '__main__':
 
-	from Config import DefineParams
 	config_fname = sys.argv[1]
-	main(config_fname)
+	bvp_mcmc(config_fname)
 	

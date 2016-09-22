@@ -4,22 +4,23 @@
 #		    University of Chicago
 #     		jwliang@oddjob.uchicago.edu
 #       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
+#
 ########################################################################################
 
 
-MCMC VPFIT assumes standard Python libraries: numpy, scipy, matplotlib and pyfits. 
+BayesVP assumes standard Python libraries: numpy, scipy, matplotlib and sklearn. 
 I recommend installing the Enthought Canopy which comes with all the scientific 
 libraries you need. You can find it here: https://www.enthought.com/products/canopy/
 
 In addition, you will need an MCMC sampler. In Vogit profiles fitting, we often need to fit multiple components with many parameters, we will use the sampler KOMBINE developed by Ben Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
 
-pip -U install KOMBINE
+pip install kombine --user 
 
 Another useful sampler is the Goodman-Weare Affine Parameter Sampler. The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
 
-pip -U install emcee 
+pip install emcee --user
 
-pip -U install triangle
+pip install triangle --user
 
 
 ------------------------------------------------------------------------------------------
@@ -37,32 +38,13 @@ Notes/Tips/Cautions:
 
 ------------------------------------------------------------------------------------------
 
+Config file: 
 
-Example config file format:
-
-\# test for saturated HI 					# Comment
-
-/home/user_xxxx/tests 						# Path to spectrum
-
-mcmc_chain  								# Output fname (without extension, will add .npy internally)
-
-200 1000 16 								# nwalkers, nsteps, nthreads
-
-%% uv_qso.spec 1546.8 1552.2 1333.5 1335  # spectrum_fname, [wave_start,wave_end], [..., ...], etc
-
-% C IV 13.5 30 0.0001   					# Atom state logN b z
-
-% C IV 14 10 0.0007
-
-lsf filename 							  	# Line Spread Function; Specfy keyword 'lsf' and filename; 
-
-logN min_logN max_logN  				# These are priors and walker initializations
-b    min_b    max_b 
-z    mean_z   dv_range
+BayesVP is run using parameters defined in a config file. In the simplest case, one can run write_config.py to produce a config file with the correct format. Examples for more advanced config file are shown in the ipython notebooks. 
 
 ------------------------------------------------------------------------------------------
 
 Features to be added/planned: 
 
 * Thermally link b parameters
-* Convergence (GR indicator)
+

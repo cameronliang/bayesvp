@@ -1,9 +1,20 @@
+################################################################################
+#
+# Model.py   		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Voigt profile model; Produce prediction of model given the config file   
+# (specifically the initial parameters). It can be imported to produce 
+# a voigt profile on demand specified by user as well. 
+################################################################################
+
 import numpy as np
 from scipy.special import wofz
 import sys
 import os
 
-from Utilities import convolve_lsf
+from Utilities import convolve_lsf,get_transitions_params
 
 # Fundamental constant [cgs units]
 h  = 6.6260755e-27   # planck constants
@@ -20,38 +31,23 @@ km_cm = 1.e5   # Convert km to cm
 ang_cm = 1.e-8 # Convert Angstrom to cm
 kpc_cm = 3.0856e21 # Convert kpc to cm 
 
-
-class Transition:
-    def __init__(self,name,wave,osc_f,gamma,mass):
-        self.name  = name
-        self.wave  = wave
-        self.osc_f = osc_f
-        self.gamma = gamma
-        self.mass  = mass
-
-def WriteSpec_ascii(wavelength,flux,fname):
-    """Write Spectrum in ascii format"""
-    f = open(fname,'w')
-    for i in range(len(wavelength)):
-        f.write('%f\t%f\n' % (wavelength[i],flux[i]))
-    f.close()
-
-def ReadTransitionData():    
-    amu = 1.66053892e-24   # 1 atomic mass in grams
-    data_path = os.path.dirname(__file__) # Absolute path for BayseVP
-    data_file = data_path + '/data/atomic_data.dat'
-    name  = np.loadtxt(data_file, dtype=str, usecols=[0])
-    wave,osc_f,gamma,mass  = np.loadtxt(data_file, unpack=True,
-                                        usecols=[1,2,3,4])
-    mass = mass*amu
-
-    transition_dict = {}
-    for i in xrange(len(name)):
-        transition_dict[str(name[i])] = Transition(name[i],wave[i],osc_f[i],gamma[i],mass[i])
-    return transition_dict
-
-def WavelengthArray(wave_start,wave_end,dv):
-    """Create Wavelength array with resolution = dv""" 
+def WavelengthArray(wave_start, wave_end, dv):
+    """
+    Create Wavelength array with resolution dv
+    
+    Parameters:
+    ----------
+    wave_start: float
+        starting wavelength of array [\AA]
+    wave_end: float
+        ending wavelength of array [\AA]
+    dv: float
+        resolution element [km/s]
+    
+    Returns
+    ----------
+    wavelength_array: array_like
+    """ 
     
     c = 299792.458       # speed of light  [km/s]
     wave_start = float(wave_start); wave_end = float(wave_end)
@@ -71,19 +67,27 @@ def voigt(x, a):
     z = x + 1j*a
     return wofz(z).real
 
-def Voigt(b,z,nu,nu0,Gamma):
+def Voigt(b, z, nu, nu0, Gamma):
     """
     Generate Voigt Profile for a given transition
-    Input: 
 
-    1. Damping coefficient: Gamma (transition specific )
-    2. wave0  = rest frame wavelength
-    3. wavelength = wavelength array for the spectrum. 
-    4. Temperature of the gas
+    Parameters:
+    ----------
+    b: float
+        b parameter of the voigt profile
+    z: float
+        resfhit of the absorption line
+    nu: array_like
+        rest frame frequncy array
+    nu0: float
+        rest frame frequency of transition [1/s]
+    Gamma: float
+        Damping coefficient (transition specific)
 
     Returns:
     ----------
-    voigt profile as a function of frequency
+    V: array_like
+        voigt profile as a function of frequency
     """
 
     delta_nu = nu - nu0 / (1+z)
@@ -95,63 +99,52 @@ def Voigt(b,z,nu,nu0,Gamma):
 
     return prefactor * voigt(x,a)  
 
-def bParameter(logT,b_turb,mass):
+def bParameter(logT, b_nt, mass):
     """
-    mass   = mass of ion in the transition [grams]
-    logT   = log10 of Temperature          [Kelvin]
-    b_turb = turbulance velocity           [km/s]
+    Combined thermal and non-thermal velocity
+
+    Parameters:
+    ----------
+    mass: float
+        mass of ion in the transition [grams]
+    logT: array_like
+        log10 of Temperature [Kelvin]
+    b_nt: array_like
+        non-thermal velocity dispersion [km/s]
 
     Returns:
     ----------
     b parameter: array_like; [km/s]
-        Combined thermal and non-thermal velocity
     """
     
-    temperature = 10**logT
-    b_thermal = np.sqrt(2. * kB*temperature / mass)*cm_km  # units: [km/s]
-    return np.sqrt(b_thermal**2 + b_turb**2)
+    temp = 10**logT
+    b_thermal = np.sqrt(2. * kB*temp / mass)*cm_km  # [km/s]
+    return np.sqrt(b_thermal**2 + b_nt**2)
 
-def Intensity(logN,b,z,wave,transition_name):
+
+def General_Intensity(logN, b, z, wave, atomic_params):
     """
-    This function is sufficient in itself to 
-    create an absorption line. 
-
+    Takes a general combination of atomic 
+    parameters, without specifying the name of the transition 
+    to compute the flux
+    
     Parameters:
-    ---------- 
-        logN = log10 column density               [cm-2]
-        b    = b parameter                        [km/s]
-        z    = redshift of the gas                 
-        wave = input rest frame wavelength array  [\AA]
+    ----------
+    logN: float
+        log10 of column density [cm-2] 
+    b: float
+        total b parameter [km/s]
+    z: float
+        redshift of system
+    wave: 1D array
+        observed wavelength array
+    atomic_params: array
+        array of oscillator strength, rest frame wavelength [\AA], damping coefficient, mass [grams] of the transition
 
     Returns:
     ----------
-    Intensity: array_like
-        Normlized Intensity with length = len(wave)
-    """    
-    transition_data = ReadTransitionData()
-
-    # Obtain transition data
-    f       = transition_data[transition_name].osc_f
-    wave0   = transition_data[transition_name].wave
-    gamma   = transition_data[transition_name].gamma
-
-    # Convert to cgs units
-    b       = b * km_cm       # Convert km/s to cm/s
-    N       = 10**logN        # Column densiy in linear space
-    lambda0 = wave0*ang_cm    # Convert Angstrom to cm
-    nu0     = c/lambda0       # Rest frame frequency 
-    nu      = c/(wave*ang_cm) # Frequency array 
-
-    # Compute Optical depth
-    tau = N*sigma0*f*Voigt(b,z,nu,nu0,gamma)
-    
-    # Normalized intensity
-    return np.exp(-tau.astype(np.float))
-
-def General_Intensity(logN,b,z,wave,atomic_params):
-    """
-    This function takes a general combination of atomic 
-    parameters, without specifying the name of the transition.
+    intensity: array
+        normalized flux of the spectrum    
     """
     f,wave0,gamma,mass = atomic_params
 
@@ -168,31 +161,47 @@ def General_Intensity(logN,b,z,wave,atomic_params):
     # Return Normalized intensity
     return np.exp(-tau.astype(np.float))
 
-def model_prediction_components(alpha,wave,n_component,transition_name):
-    if n_component == 1:
-        logN,b,z = alpha
-        return Intensity(logN,b,z,wave,transition_name)
-    
-    elif n_component > 1:
-        spec = np.ones((n_component,len(wave)))
-        alpha = alpha.reshape(n_component,3)
-        for i in xrange(n_component):
-            logN,b,z = alpha[i]
-            spec[i] = Intensity(logN,b,z,wave,transition_name)
-        return np.product(spec,axis=0)
-    else:
-        print("The number of component cannot be 0 or negative\n")
-        exit()    
+def simple_spec(logN, b, z, wave, atom=None, state=None, lsf=1):
+    """
+    Generate a single component absorption for all transitions
+    within the given observed wavelength, redshift for the desired
+    atom and state
 
-def model_prediction(alpha,wave,n_component,transition_names):
+    Parameters:
+    ----------
+    logN: float
+        log10 of column density [cm-2] 
+    b: float
+        total b parameter [km/s]
+    z: float
+        redshift of system
+    wave: 1D array
+        observed wavelength array
+
+    Returns:
+    ----------
+    intensity: array
+        normalized flux of the spectrum    
+    """
+
+    if atom is None or state is None:
+        print('Enter atom and ionization state (e.g., C IV)\n')
+        exit()
+
+    atomic_params = get_transitions_params(atom,state,min(wave),max(wave),z)
+    n_transitions = len(atomic_params)
     
-    n_trans = len(transition_names)
-    spec = np.ones((n_trans,len(wave)))
-    for i in xrange(n_trans):
-        spec[i] = model_prediction_components(alpha,wave,n_component,transition_names[i])
+    spec = []
+    for l in xrange(n_transitions):
+        if not np.isnan(atomic_params[l]).any():
+            model_flux = General_Intensity(logN,b,z,wave,atomic_params[l]) 
+            spec.append(convolve_lsf(model_flux,lsf)) 
+        else:
+            return np.ones(wave)
+    # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
-def generic_prediction(alpha,obs_spec_obj):
+def generic_prediction(alpha, obs_spec_obj):
     """
     This is a model flux produced by a generic combination 
     of the voigt profile parameters by arbitrary combination
@@ -207,7 +216,8 @@ def generic_prediction(alpha,obs_spec_obj):
     obs_spec_obj:
         Paramters object defined by the config file
         see ./Config.py
-    Returns
+    
+    Returns:
     ----------
     Model flux: 1D array;
         Predicted flux based on the paramters with length equal to 
@@ -240,27 +250,18 @@ def generic_prediction(alpha,obs_spec_obj):
 
                     # Convolve (potentially )LSF for each region 
                     spec.append(convolve_lsf(model_flux,obs_spec_obj.lsf[k])) 
+    
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
 if __name__ == '__main__':
 
     import matplotlib.pyplot as pl
-    from Config import DefineParams
-    data_path = os.path.dirname(os.path.abspath(__file__))
-    config_fname = data_path + '/tests/config_CIV.dat'
+    wave = WavelengthArray(1200,1230,2)
 
-    obs_spec = DefineParams(config_fname)
-    obs_spec.fileio_mcmc_params()
-    obs_spec.fitting_data()
-    obs_spec.fitting_params()
-    obs_spec.spec_lsf()
-    
-    alpha = np.array([13.766,14.42,-0.000139]) 
-    flux = generic_prediction(alpha,obs_spec)
-    
-    pl.step(obs_spec.wave,obs_spec.flux,c='k')
-    pl.step(obs_spec.wave,obs_spec.dflux,c='r')
-    pl.plot(obs_spec.wave,flux,lw=1.5,c='b')
-    pl.ylim([0,1.4])
+    flux = simple_spec(15,20,0,wave)
+    #print flux
+    pl.step(wave,flux)
+    pl.xlim([1214,1217])
+    pl.ylim([0,1.3])
     pl.show()

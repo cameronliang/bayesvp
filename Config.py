@@ -1,6 +1,19 @@
+################################################################################
+#
+# Config.py 		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Read in and define all of the parameters for voigt profile based on a  
+# config file; see write_config.py for producing config file.     
+################################################################################
+
 import numpy as np
+import matplotlib.pyplot as pl
 import os
 import re 
+
+from Utilities import get_transitions_params
 
 
 class DefineParams:
@@ -29,7 +42,7 @@ class DefineParams:
         Priors for three types of parameters (logN, b, z)
 
     """
-    
+
     def __init__(self,config_fname):
         self.config_fname = config_fname
         
@@ -42,21 +55,14 @@ class DefineParams:
             if not line.startswith('#') and not line.startswith('!'): 
                 self.lines.append(line)    
 
-    def fileio_mcmc_params(self):
-        """
-        Retrieve MCMC parameters from config file
-
-        Returns
-        --------
-        spec_path: path to spectrum;  
-        chain_fname: full path to the chain
-        nwalkers: int
-            number of walkers
-        nsteps: int
-            number of steps per walker
-        nthreads: int
-            number of threads for parallelization
-        """
+        
+        ########################################################################
+        # Retrieve MCMC parameters from config file
+        # --------
+        # self.spec_path, self.chain_fname, self.nwalkers, self.nsteps,
+        # self.nthreads
+        ########################################################################
+        
 
         # Paths and fname strings
         for line in self.lines:
@@ -88,17 +94,16 @@ class DefineParams:
         if not os.path.isdir(self.mcmc_outputpath):
 		    os.mkdir(self.mcmc_outputpath)
         self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
- 
-    def fitting_data(self): 
-        """
-        Get the spectral data specified by the config file
-        The spectrum file assumes three column of data with 
-        [wave,flux,error], in that order. 
-
-        Returns
-        ---------
-        wave, flux, error: array_like 
-        """
+  
+        
+        ########################################################################
+        # Get the spectral data specified by the config file
+        # The spectrum file assumes three column of data with 
+        # [wave,flux,error]
+        # ---------
+        # self.spec_short_fname, self.spec_fname 
+        # self.wave, self.flux, self.error 
+        ########################################################################
         for line in self.lines: 
             if re.search('%%',line):
                 spec_fname_line = line
@@ -106,7 +111,6 @@ class DefineParams:
         spec_data_array = spec_fname_line.split(' ')
         self.spec_short_fname = spec_data_array[1]
         self.spec_fname = self.spec_path + '/' + spec_data_array[1]
-
 
         # Select spectral range to fit
         if len(spec_data_array[2:]) % 2 != 0:
@@ -123,7 +127,7 @@ class DefineParams:
                     exit()
 
         wave,flux,dflux = np.loadtxt(self.spec_fname,
-                                     unpack=True,usecols=[0,1,2])
+                                    unpack=True,usecols=[0,1,2])
         
         # Select regions of interests 
         all_inds = []
@@ -143,44 +147,19 @@ class DefineParams:
         inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
 
 
-    def fitting_params(self):
-        """
-        Get Voigt profile parameters of arbitary number of components
-        specified in the config file.
+        
+        ########################################################################
+        # Get Voigt profile parameters of arbitary number of components
+        # specified in the config file.
 
-        Uses './data/atom.dat' to read in atomic/transition data
-        [atom state rest_wavelength oscillator_strength damping_coeff mass_amu]
-        Users can add additional row to the file for new atomic data
+        # Uses './data/atom.dat' to read in atomic/transition data with format:
+        # [atom state rest_wavelength oscillator_strength damping_coeff mass_amu]
+        # Users can add additional row to the file for new atomic data
 
-        Returns
-        --------
-        vp_params: array_like
-            vogit parameters 
-        transitions_params_array: array_like 
-        vp_params_flags
-        vp_params_type
-        self.n_component
-        """
-
-        amu = 1.66053892e-24   # 1 atomic mass in grams
-        data_path = os.path.dirname(os.path.abspath(__file__)) # Absolute path for BayseVP
-        data_file = data_path + '/data/atom.dat'
-        atoms,states  = np.loadtxt(data_file, dtype=str, 
-                                  unpack=True,usecols=[0,1])
-        wave,osc_f,gamma,mass = np.loadtxt(data_file,unpack=True,
-                                            usecols=[2,3,4,5])
-        mass = mass*amu 
-
-        def get_transitions_params(atom,state,wave_start,wave_end,redshift):
-
-            inds = np.where((atoms == atom) & 
-                            (states == state) & 
-                            (wave >= wave_start/(1+redshift)) & 
-                            (wave < wave_end/(1+redshift)))[0]
-            if len(inds) == 0:
-                return np.empty(4)*np.nan
-            else:
-                return np.array([osc_f[inds],wave[inds],gamma[inds], mass[inds]]).T
+        # --------
+        # self.vp_params, self.transitions_params_array, self.vp_params_flags, # self.vp_params_type, self.n_component 
+        ########################################################################
+        
 
         # Lines in config file that contain the component parameters
         # i.e atom, state, logN, b, z
@@ -193,7 +172,6 @@ class DefineParams:
 
         logNs = []; bs = []; redshifts = []
         transitions_params_array = []
-        guess_alpha = []
         for i in xrange(len(component_lines)):
             line = component_lines[i]
             line = filter(None,line.split(' '))
@@ -257,22 +235,19 @@ class DefineParams:
                 for index in inds:
                     flags[index] = None
 
-        # Model uses these to correctly construct sets of (logN, b, z) for each component
+        # Model uses these to construct sets of (logN, b, z) for each component
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
 
-
-    def spec_lsf(self):
         """
+        ########################################################################
         Determine the LSF by specifying LSF filename with 
         'database' directory under self.spec_path.    
-
         Assumes LSF file contains only 1 column of data
-
-        lsf: array_like
-            Line spread function 
+        -----------
+        lsf 
+        ########################################################################
         """
-
         # Check if LSF is specified in config file
         defined_lsf = False
         for line in self.lines:
@@ -301,21 +276,20 @@ class DefineParams:
             # Convolve with LSF = 1
             self.lsf = np.ones(len(self.wave_begins))
 
-
-    def priors_and_init(self):
-        """
-        Read priors and use them for walker 
-        initialization 
-
-        Returns 
-        -----------
-        format in config file:
-        logN min_logN max_logN
-        b    min_b    max_b
-        z    mean_z   dv <----- range defined by range of velocity [km/s] 
         
-        For redshift: mean_redshift dv 
-        """
+        #######################################################################
+        # Read priors and use them for walker initialization 
+        # 
+        
+        # format in config file:
+        # logN min_logN max_logN
+        # b    min_b    max_b
+        # z    mean_z   dv <----- range defined by range of velocity [km/s] 
+        # For redshift: mean_redshift dv 
+        # -----------
+        # self.priors
+        #######################################################################
+        
         self.priors = np.zeros((3,2))
         for line in self.lines:
             line = np.array(line.split(' '))
@@ -327,19 +301,46 @@ class DefineParams:
             if 'z' in line:
                 self.priors[2] = [float(line[1]),float(line[2])]
 
+    def print_config_params(self):
+        print('\n')
+        print('Spectrum Path: %s'     % self.spec_path)
+        print('Spectrum name: %s'     % self.spec_short_fname)
+        print('Fitting %i components with transitions: ' % self.n_component)
+        for i in xrange(len(self.transitions_params_array)):
+            for j in xrange(len(self.transitions_params_array[i])):
+                if not np.isnan(self.transitions_params_array[i][j]).any():
+                    for k in xrange(len(self.transitions_params_array[i][j])):
+                        rest_wavelength = self.transitions_params_array[i][j][k][1]
+                        print('    Transitions Wavelength: %.3f' % rest_wavelength)
+                else:
+                    print('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
+                    exit()
 
+        print('Selected data wavelegnth region:')
+        for i in xrange(len(self.wave_begins)):
+            print('    [%.3f, %.3f]' % (self.wave_begins[i],self.wave_ends[i])) 
+        print('MCMC Sampler: %s' % self.mcmc_sampler)
+        print('Model selection method: %s' % self.model_selection)
+        print('Walkers,steps,threads : %i,%i,%i' % (self.nwalkers,self.nsteps,self.nthreads))
+        print('Priors: ')
+        print('logN:     [min,   max] = [%.3f, %.3f] ' % (self.priors[0][0],self.priors[0][1]))
+        print('b:        [min,   max] = [%.3f, %.3f] ' % (self.priors[1][0],self.priors[1][1]))
+        print('redshift: [mean z, dv] = [%.3f, %.3f] ' % (self.priors[2][0],self.priors[2][1]))
+        print('\n')
+
+
+    def plot_spec(self):
+
+        pl.step(self.wave,self.flux,color='k')
+        pl.step(self.wave,self.dflux,color='r')
+        
 
 if __name__ == '__main__':
 
     # test
     import sys
-    from Utilities import print_config_params 
     config_fname = sys.argv[1]
+    
     # Load config parameter object 
-    obs_spec = DefineParams(config_fname)
-    obs_spec.fileio_mcmc_params()
-    obs_spec.fitting_data()
-    obs_spec.fitting_params()
-    obs_spec.spec_lsf()
-    obs_spec.priors_and_init()    
-    print_config_params(obs_spec)
+    obs_spec = DefineParams(config_fname)    
+    obs_spec.print_config_params()

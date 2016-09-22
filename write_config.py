@@ -1,3 +1,12 @@
+################################################################################
+#
+# write_config.py 		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Interactive script to aid writing a config file for voigt profile fitting. 
+################################################################################
+
 import numpy as np
 import os
 

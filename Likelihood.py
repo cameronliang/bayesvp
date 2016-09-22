@@ -1,7 +1,17 @@
+################################################################################
+#
+# Likelihood.py 		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Defined the likelihood and posterior distribution for the model given the 
+# data.      
+################################################################################
+
 import numpy as np
-import pylab as pl
 
 from Model import generic_prediction
+
 np.seterr(all='ignore') # Ignore floating point warnings.
 
 def tophat_prior(model_x, x_left,x_right):
