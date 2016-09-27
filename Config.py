@@ -61,8 +61,6 @@ class DefineParams:
         # self.spec_path, self.chain_fname, self.nwalkers, self.nsteps,
         # self.nthreads
         ########################################################################
-        
-
         # Paths and fname strings
         for line in self.lines:
             line = filter(None,line.split(' '))

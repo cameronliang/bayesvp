@@ -1,27 +1,34 @@
 ########################################################################################
-#
-#   		(c) Cameron J. Liang
-#		    University of Chicago
-#     		jwliang@oddjob.uchicago.edu
-#       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
-#
+###
+###   		(c) Cameron J. Liang
+###		    The University of Chicago
+###     	    jwliang@oddjob.uchicago.edu
+###       	BayesVP: A Full Bayesian Approach to Voigt Profile Fitting
 ########################################################################################
 
+------------------------------------------------------------------------------------------
 
-BayesVP assumes standard Python libraries: numpy, scipy, matplotlib and sklearn. 
-I recommend installing the Enthought Canopy which comes with all the scientific 
-libraries you need. You can find it here: https://www.enthought.com/products/canopy/
+BayseVP requires the following libraries:
 
-In addition, you will need an MCMC sampler. In Vogit profiles fitting, we often need to fit multiple components with many parameters, we will use the sampler KOMBINE developed by Ben Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
+1) numpy, scipy, matplotlib and pyfits. 
 
-pip install kombine --user 
+2) sklearn
 
-Another useful sampler is the Goodman-Weare Affine Parameter Sampler. The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
+3) MCMC Sampler
+
+Python distributions:
+
+[Anaconda](https://www.continuum.io/downloads)
+
+[Enthought Canopy](https://www.enthought.com/products/canopy/)
+
+In addition, you will need an MCMC sampler. In Vogit profiles fitting, we often need to fit multiple components with many parameters, we will use the sampler [KOMBINE](http://home.uchicago.edu/~farr/kombine/kombine.html) developed by Ben Far and Will Far from the University of Chicago and LIGO collaboration; the easist way is to install is using pip:
+
+pip install kombine --user
+
+Another useful sampler is the Goodman-Weare Affine Parameter Sampler [emcee](http://dan.iel.fm/emcee/current/). The Implementation in python is developed by Dan Foreman-Mackey et al, along with a useful tool to plot the chains (triangle.py). 
 
 pip install emcee --user
-
-pip install triangle --user
-
 
 ------------------------------------------------------------------------------------------
 
@@ -45,6 +52,4 @@ BayesVP is run using parameters defined in a config file. In the simplest case, 
 ------------------------------------------------------------------------------------------
 
 Features to be added/planned: 
-
 * Thermally link b parameters
-
