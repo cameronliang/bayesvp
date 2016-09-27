@@ -74,9 +74,10 @@ def determine_autovp(config_fname):
 		else:
 			normal_lines.append(line)
 
-	# Produce Config files
-	for n in xrange(n_component_min,n_component_max+1):
-		replicate_config(config_fname,normal_lines,component_line,n)
+	if auto_vp:
+		# Produce Config files
+		for n in xrange(n_component_min,n_component_max+1):
+			replicate_config(config_fname,normal_lines,component_line,n)
 
 	return auto_vp, n_component_min, n_component_max
 
@@ -377,6 +378,7 @@ def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 					(states == state) & 
 					(wave >= wave_start/(1+redshift)) & 
 					(wave < wave_end/(1+redshift)))[0]
+ 
 	if len(inds) == 0:
 		return np.empty(4)*np.nan
 	else:

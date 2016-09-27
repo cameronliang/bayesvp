@@ -45,7 +45,7 @@ def spline_binned_pdf(x,bins = 30, interp_kind = 'linear'):
 
     return new_x, f(new_x) 
 
-def extrapolate_pdf(x,pdf,left_boundary_x,right_boundary_x,slope=100):
+def extrapolate_pdf(x,pdf,left_boundary_x,right_boundary_x,slope=10):
     """ 
     Extrapolate the log10(pdf) outside the range of (min_x,max_x) with 
     some logarithmic slope 
@@ -97,7 +97,6 @@ def plot_pdf(x,pdf,plot_path,ion_name):
     pl.ylabel(r'$p(\log N)$',fontsize=15)
     pl.savefig(plot_path + '/pdf_' + ion_name + '.png',bbox_inches='tight',dpi=100)
     pl.clf()
-
 
 def write_pdf(x,pdf,output_path,x_name,ion_name):
     """Write to file for the distribution of the specific ion"""

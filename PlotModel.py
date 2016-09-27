@@ -30,10 +30,10 @@ def plot_model_comparison(config_params_obj,model_flux,rest_wave,redshift,dv):
     pl.ylabel(r'$\rm Normalized\,Flux$')
     pl.legend(loc=3)
     
-    pl.savefig(config_params_obj.spec_path + '/vpfit_mcmc/bestfit_' + config_params_obj.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
+    pl.savefig(config_params_obj.processed_product_path + '/modelspec_' + config_params_obj.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
     pl.clf()
 
-    print('Written %s/vpfit_mcmc/best_fit_%s.pdf\n' % (config_params_obj.spec_path,config_params_obj.chain_short_fname))
+    print('Written %s/processed_products/best_fit_%s.pdf\n' % (config_params_obj.spec_path,config_params_obj.chain_short_fname))
 
 def plot_gr_indicator(config_params_obj):
     gr_fname = config_params_obj.chain_fname + '_GR.dat'
@@ -48,20 +48,19 @@ def plot_gr_indicator(config_params_obj):
 
     pl.xlabel(r'$N(\rm{steps})$')
     pl.ylabel(r'$R$')
-    pl.savefig(config_params_obj.spec_path + '/vpfit_mcmc/bestfit_' + config_params_obj.chain_short_fname + '_GR.pdf',bbox_inches='tight',dpi=100)
-    
+    pl.savefig(config_params_obj.processed_product_path + '/' + config_params_obj.chain_short_fname + '_GR.pdf',bbox_inches='tight',dpi=100)
 
 def write_model_spectrum(config_params_obj,model_flux):
-    np.savetxt(config_params_obj.mcmc_outputpath + 
-            '/bestfit' + config_params_obj.chain_short_fname+'.dat',
+    np.savetxt(config_params_obj.processed_product_path + 
+            '/spec_' + config_params_obj.chain_short_fname+'.dat',
             np.c_[config_params_obj.wave,config_params_obj.flux, 
             config_params_obj.dflux,model_flux],
             header='wave\tflux\terror\tmodel')
-    print('Written %s/vpfit_mcmc/bestfit_model.dat' % config_params_obj.spec_path)
+    print('Written %s/processed_products/modelspec.dat' % config_params_obj.spec_path)
     
 def write_model_summary(config_params_obj):
     mcmc_chain_fname = config_params_obj.chain_fname + '.npy'
-    output_summary_fname = config_params_obj.spec_path + '/vpfit_mcmc/bestfit_summary_'+config_params_obj.chain_short_fname+'.dat'
+    output_summary_fname = config_params_obj.processed_product_path + '/params_'+config_params_obj.chain_short_fname+'.dat'
     write_mcmc_stats(config_params_obj,output_summary_fname)
 
 

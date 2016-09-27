@@ -9,11 +9,10 @@
 ################################################################################
 
 import numpy as np
-import matplotlib.pyplot as pl
 import os
 import re 
 
-from Utilities import get_transitions_params
+from Utilities import get_transitions_params,printline
 
 
 class DefineParams:
@@ -88,13 +87,7 @@ class DefineParams:
                     if key in ['kombine','emcee']:
                         self.mcmc_sampler = key
                     elif key in ['aic','bic','bf']:
-                        self.model_selection = key       
-
-        self.mcmc_outputpath   = self.spec_path + '/vpfit_mcmc'
-        if not os.path.isdir(self.mcmc_outputpath):
-		    os.mkdir(self.mcmc_outputpath)
-        self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
-  
+                        self.model_selection = key  
         
         ########################################################################
         # Get the spectral data specified by the config file
@@ -146,8 +139,10 @@ class DefineParams:
         inds = np.where((self.flux < 0)); self.flux[inds] = 0; 
         inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
 
+        if len(self.wave) == 0 or len(self.flux) == 0 or len(self.dflux) == 0:
+            print('No wavelength within specified range. Please check config file and spectrum.')
+            exit()
 
-        
         ########################################################################
         # Get Voigt profile parameters of arbitary number of components
         # specified in the config file.
@@ -182,17 +177,16 @@ class DefineParams:
             redshifts.append(line[5])
 
             if line[5][-1].isalpha():
-                temp_redshift = line[5][:-1]
+                self.redshift = line[5][:-1]
             else:
-                temp_redshift = line[5]
+                self.redshift = line[5]
                 
 
             transitions_params_array.append([])
             # Each component gets a set of all of the transitions data
             for j in xrange(len(self.wave_begins)):
-                
                 # each wavelength regions gets all of the transitions
-                temp_params = get_transitions_params(atom,state,self.wave_begins[j],self.wave_ends[j],float(temp_redshift))
+                temp_params = get_transitions_params(atom,state,self.wave_begins[j],self.wave_ends[j],float(self.redshift))
                 transitions_params_array[i].append(temp_params)
         
         # Shape = (n_component,n_regions,n_transitions,4) 
@@ -238,6 +232,19 @@ class DefineParams:
         # Model uses these to construct sets of (logN, b, z) for each component
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
+
+
+        # Make directories for data products
+        self.mcmc_outputpath = self.spec_path+'/bvp_chains_' + str(self.redshift)
+        if not os.path.isdir(self.mcmc_outputpath):
+		    os.mkdir(self.mcmc_outputpath)
+        self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
+
+        self.processed_product_path = self.spec_path+'/processed_products_' + str(self.redshift)
+        if not os.path.isdir(self.processed_product_path):
+		    os.mkdir(self.processed_product_path)
+
+
 
         """
         ########################################################################
@@ -303,6 +310,8 @@ class DefineParams:
 
     def print_config_params(self):
         print('\n')
+        printline()
+        print('Config file: %s'     % self.config_fname)
         print('Spectrum Path: %s'     % self.spec_path)
         print('Spectrum name: %s'     % self.spec_short_fname)
         print('Fitting %i components with transitions: ' % self.n_component)
@@ -328,9 +337,8 @@ class DefineParams:
         print('redshift: [mean z, dv] = [%.3f, %.3f] ' % (self.priors[2][0],self.priors[2][1]))
         print('\n')
 
-
     def plot_spec(self):
-
+        import matplotlib.pyplot as pl
         pl.step(self.wave,self.flux,color='k')
         pl.step(self.wave,self.dflux,color='r')
         
