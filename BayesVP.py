@@ -100,12 +100,12 @@ def bvp_mcmc_single(obs_spec,chain_filename_ncomp = None):
 	# Define the natural log of the posterior 
 	lnprob = Posterior(obs_spec)
 
-	if obs_spec.mcmc_sampler == 'emcee':
+	if obs_spec.mcmc_sampler.lower() == 'emcee':
 		import emcee
 		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, threads=obs_spec.nthreads) 
 		sampler.run_mcmc(p0,obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', np.swapaxes(sampler.chain,0,1))
-	elif obs_spec.mcmc_sampler == 'kombine':
+	elif obs_spec.mcmc_sampler.lower() == 'kombine':
 		import kombine
 		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
 		# First do a rough burn in based on accetance rate.
@@ -178,10 +178,10 @@ def bvp_mcmc(config_fname):
 			# compare with the previous fit 
 			if 0 < n <= n_component_max-1:
 
-				if obs_spec.model_selection in ('odds','bf','BF'):   
+				if obs_spec.model_selection.lower() in ('odds','bf'):   
 					index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
 
-				elif obs_spec.model_selection in ('aic','AIC', 'bic','BIC'):
+				elif obs_spec.model_selection.lower() in ('aic','bic'):
 					index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
 
 				# Compars BIC/AIC/Odds ratios

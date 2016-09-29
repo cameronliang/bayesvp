@@ -16,13 +16,13 @@ import os
 
 from Utilities import convolve_lsf,get_transitions_params
 
-# Fundamental constant [cgs units]
-h  = 6.6260755e-27   # planck constants
+# constants [cgs units]
+h  = 6.6260755e-27   # planck constant
 kB = 1.380658e-16    # Boltzmann constant
 c  = 2.99792458e10   # speed of light
 m  = 9.10938291e-28  # electron mass
-e  = 4.80320425e-10  # electron charge
 mH = 1.67e-24        # proton mass
+e  = 4.80320425e-10  # electron charge
 sigma0 = 0.0263      # Cross section [cm^2/sec]
 
 # Units Conversion

@@ -91,7 +91,7 @@ def model_info_criterion(obs_spec_obj):
 	in Astronomy" (2014)
 	"""
 
-	if obs_spec_obj.model_selection in ('odds','bf','BF'):
+	if obs_spec_obj.model_selection.lower() in ('odds','bf'):
 		return local_density_bf(obs_spec_obj) 
 
 	else:
@@ -108,9 +108,9 @@ def model_info_criterion(obs_spec_obj):
 
 		log10_L = lnprob(medians)
 		lnL = log10_L /np.log10(2.7182818)
-		if obs_spec_obj.model_selection == 'aic':
+		if obs_spec_obj.model_selection.lower() == 'aic':
 			return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
-		elif obs_spec_obj.model_selection == 'bic':
+		elif obs_spec_obj.model_selection.lower() == 'bic':
 			return -2*lnL + n_params*np.log(data_length)
 	
 		else:
