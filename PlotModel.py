@@ -76,7 +76,7 @@ class ProcessModel:
 
         pl.xlabel(r'$N(\rm{steps})$')
         pl.ylabel(r'$R_{\rm GR}$')
-        pl.savefig(self.config_param.processed_product_path + '/' + self.config_param.chain_short_fname + '_GR.pdf',bbox_inches='tight',dpi=100)
+        pl.savefig(self.config_param.processed_product_path + '/GR_' + self.config_param.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
         pl.clf()
 
     def corner_plot(self):
@@ -86,11 +86,11 @@ class ProcessModel:
         """
         if self.n_params == 3:
             self.samples[:,2] = self.samples[:,2] * 1e5  
-            fig = corner.corner(self.samples,bins=30,labels=[r"$\log N\,[\rm cm^{-3}]$",r"$b\,[\rm km/s]$", r"$z \times 10^5$"],title_kwargs={"fontsize": 15})
+            fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],labels=[r"$\log N\,[\rm cm^{-3}]$",r"$b\,[\rm km/s]$", r"$z \times 10^5$"],show_titles=True,title_kwargs={"fontsize": 15})
         else:  
-            fig = corner.corner(self.samples,show_titles=True,title_kwargs={"fontsize": 15})
+            fig = corner.corner(self.samples)
 
-        pl.savefig(self.config_param.processed_product_path + '/' + self.config_param.chain_short_fname + '_corner.pdf',bbox_inches='tight',dpi=100)
+        pl.savefig(self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
         pl.clf()
 
     def write_model_spectrum(self):
