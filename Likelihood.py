@@ -69,13 +69,11 @@ class Posterior(object):
         Note that for redshift z, the ranges are defined 
         to be [mean_z-v/c,mean_z+v/c]  
         """
-        # speed of light [km/s]
-        c = 299792.458
         
         # Define these for clarity
         min_logN,max_logN = self.obs_spec.priors[0] 
         min_b,max_b       = self.obs_spec.priors[1]
-        mean_z,dv         = self.obs_spec.priors[2]
+        min_z,max_z         = self.obs_spec.priors[2]
 
         # Select the parameters that are free or tie (i.e not fixed)
         final_vp_params_type = self.obs_spec.vp_params_type[~np.isnan(self.obs_spec.vp_params_flags)]
@@ -90,7 +88,7 @@ class Posterior(object):
                 sum_b_prior += tophat_prior(alpha[i],min_b, max_b)
             elif final_vp_params_type[i] == 'z':
                 model_redshifts.append(alpha[i])
-                sum_z_prior += tophat_prior(alpha[i],mean_z-dv/c,mean_z+dv/c)
+                sum_z_prior += tophat_prior(alpha[i],min_z,max_z)
         
         # Make sure multiple components do not swap
         model_redshifts = np.array(model_redshifts)

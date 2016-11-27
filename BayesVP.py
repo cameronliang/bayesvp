@@ -44,7 +44,6 @@ def _create_walkers_init(obs_spec):
 		the parameters space based on the MCMC algorithm used. 
 	"""
 
-	c = 299792.458 # speed of light [km/s]
 	temp_flags = obs_spec.vp_params_flags[~np.isnan(obs_spec.vp_params_flags)]
 	n_params =  len(list(set(temp_flags)))
 
@@ -53,6 +52,7 @@ def _create_walkers_init(obs_spec):
 
 	p0 = np.zeros((n_params,obs_spec.nwalkers))
 	for i in xrange(n_params):
+		# require if-conditions for specific parameters 
 		if final_vp_params_type[i] == 'logN':
 			p0[i] = np.random.uniform(obs_spec.priors[0][0],
 									obs_spec.priors[0][1],
@@ -62,9 +62,10 @@ def _create_walkers_init(obs_spec):
 									obs_spec.priors[1][1],
 									size=obs_spec.nwalkers)
 		elif final_vp_params_type[i] == 'z':
-			mean_z = obs_spec.priors[2][0]; 
-			dv = obs_spec.priors[2][1];
-			p0[i] = np.random.uniform(mean_z-dv/c,mean_z+dv/c,size=obs_spec.nwalkers)
+			p0[i] = np.random.uniform(obs_spec.priors[2][0],
+									obs_spec.priors[2][1],
+									size=obs_spec.nwalkers)
+		
 
 	return np.transpose(p0)
 

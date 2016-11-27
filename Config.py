@@ -304,8 +304,20 @@ class DefineParams:
             if 'b' in line:
                 self.priors[1] = [float(line[1]),float(line[2])]
             if 'z' in line:
-                self.priors[2] = [float(line[1]),float(line[2])]
-
+                c = 299792.458 # speed of light [km/s]
+                if len(line) == 4:
+                    center_z,min_dv,max_dv = float(line[1]),float(line[2]),float(line[3])
+                    if min_dv == max_dv:
+                        min_dv = -min_dv
+                    min_z,max_z = center_z+min_dv/c,center_z+max_dv/c
+                elif len(line) == 3:
+                    center_z,dv = float(line[1]),float(line[2])
+                    min_z,max_z = center_z-dv/c,center_z+dv/c
+                else:
+                    print('Format:')
+                    print('z center_z min_dv max_dv')
+                    exit()
+                self.priors[2] = [min_z,max_z]
     def print_config_params(self):
         print('\n')
         printline()
@@ -332,7 +344,7 @@ class DefineParams:
         print('Priors: ')
         print('logN:     [min,   max] = [%.3f, %.3f] ' % (self.priors[0][0],self.priors[0][1]))
         print('b:        [min,   max] = [%.3f, %.3f] ' % (self.priors[1][0],self.priors[1][1]))
-        print('redshift: [mean z, dv] = [%.3f, %.3f] ' % (self.priors[2][0],self.priors[2][1]))
+        print('redshift: [min,   max] = [%.5f, %.5f] ' % (self.priors[2][0],self.priors[2][1]))
         print('\n')
 
     def plot_spec(self):
