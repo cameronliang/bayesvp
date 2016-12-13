@@ -54,10 +54,10 @@ class ProcessModel:
         pl.ylabel(r'$\rm Normalized\,Flux$')
         pl.legend(loc=3)
         
-        pl.savefig(self.config_param.processed_product_path + '/modelspec_' + self.config_param.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
+        output_name = self.config_param.processed_product_path + '/modelspec_' + self.config_param.chain_short_fname + '.pdf' 
+        pl.savefig(output_name,bbox_inches='tight',dpi=100)
         pl.clf()
-
-        print('Written %s/processed_products/best_fit_%s.pdf\n' % (self.config_param.spec_path,self.config_param.chain_short_fname))
+        print('Written %s' % output_name)
 
     def plot_gr_indicator(self):
         """
@@ -76,8 +76,12 @@ class ProcessModel:
 
         pl.xlabel(r'$N(\rm{steps})$')
         pl.ylabel(r'$R_{\rm GR}$')
-        pl.savefig(self.config_param.processed_product_path + '/GR_' + self.config_param.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
+
+        output_name = self.config_param.processed_product_path + '/GR_' + self.config_param.chain_short_fname + '.pdf' 
+        pl.savefig(output_name,bbox_inches='tight',dpi=100)
         pl.clf()
+
+        print('Written %s' % output_name)
 
     def corner_plot(self):
         """
@@ -88,10 +92,13 @@ class ProcessModel:
             self.samples[:,2] = self.samples[:,2] * 1e5  
             fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],labels=[r"$\log N\,[\rm cm^{-3}]$",r"$b\,[\rm km/s]$", r"$z \times 10^5$"],show_titles=True,title_kwargs={"fontsize": 15})
         else:  
-            fig = corner.corner(self.samples)
+            fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],show_titles=True,title_kwargs={"fontsize": 15})
 
-        pl.savefig(self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.pdf',bbox_inches='tight',dpi=100)
+        output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.pdf'
+        pl.savefig(output_name,bbox_inches='tight',dpi=100)
         pl.clf()
+
+        print('Written %s' % output_name)
 
     def write_model_spectrum(self):
         """
@@ -105,8 +112,7 @@ class ProcessModel:
                                       self.config_param.flux, 
                                       self.config_param.dflux,
                                       self.model_flux],header='wave\tflux\terror\tmodel\n')
-        print('Written %s/processed_products/modelspec.dat' % 
-              self.config_param.spec_path)
+        print('Written %s' % output_fname)
         
     def write_model_summary(self):
         """

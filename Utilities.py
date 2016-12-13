@@ -246,7 +246,7 @@ def write_mcmc_stats(config_params_obj,output_fname):
 				 output_stats[6]))
 		
 	f.close()
-	print('Written %s: ' % output_fname)
+	print('Written %s' % output_fname)
 
 	return
 

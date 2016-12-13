@@ -289,8 +289,7 @@ class DefineParams:
         # format in config file:
         # logN min_logN max_logN
         # b    min_b    max_b
-        # z    mean_z   dv <----- range defined by range of velocity [km/s] 
-        # For redshift: mean_redshift dv 
+        # z    center_z min_dv max_dv (range defined by range of velocity) [km/s]  
         # -----------
         # self.priors
         #######################################################################
@@ -314,8 +313,8 @@ class DefineParams:
                     center_z,dv = float(line[1]),float(line[2])
                     min_z,max_z = center_z-dv/c,center_z+dv/c
                 else:
-                    print('Format:')
-                    print('z center_z min_dv max_dv')
+                    print('In config, format for z:')
+                    print('z center_z |min_dv| |max_dv|')
                     exit()
                 self.priors[2] = [min_z,max_z]
     def print_config_params(self):
