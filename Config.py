@@ -44,6 +44,8 @@ class DefineParams:
 
     def __init__(self,config_fname):
         self.config_fname = config_fname
+        printline()
+        print('Config file: %s' % config_fname)
         
         # Read and filter empty lines
         all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
@@ -105,7 +107,7 @@ class DefineParams:
 
         # Select spectral range to fit
         if len(spec_data_array[2:]) % 2 != 0:
-            print('There is odd number of wavelengths entered in config file')
+            print('There is an odd number of wavelengths entered in config file.')
             print('Exiting program...')
             exit()
         else:
@@ -138,7 +140,7 @@ class DefineParams:
         inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
 
         if len(self.wave) == 0 or len(self.flux) == 0 or len(self.dflux) == 0:
-            print('No wavelength within specified range. Please check config file and spectrum.')
+            print('No data within specified wavelength range. Please check config file and spectrum.')
             exit()
 
         ########################################################################
@@ -259,6 +261,10 @@ class DefineParams:
             if re.search('lsf',line) or re.search('LSF',line):
                 lsf_line = line.split(' ')[1:]
                 defined_lsf = True
+                if not os.path.isdir(self.spec_path + '/database'):
+                    os.mkdir(self.spec_path + '/database')
+                    print('Require LSF file to be in %s' % self.spec_path + '/database')
+                    exit()
                 break
 
         # Get the LSF function from directory 'database'
@@ -275,7 +281,7 @@ class DefineParams:
                     fname = self.spec_path + '/database/' + lsf_fname
                     self.lsf = np.loadtxt(fname)
             else:
-                print('There should be 1 LSF or the number of wavelength regions; exit program.')
+                print('Please check if number of LSF mataches wavelength regions; exiting..')
                 exit()
         else:
             # Convolve with LSF = 1
@@ -318,7 +324,6 @@ class DefineParams:
                     exit()
                 self.priors[2] = [min_z,max_z]
     def print_config_params(self):
-        print('\n')
         printline()
         print('Config file: %s'     % self.config_fname)
         print('Spectrum Path: %s'     % self.spec_path)

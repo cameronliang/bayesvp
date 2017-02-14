@@ -1,3 +1,18 @@
+################################################################################
+#
+# PlotModel.py   		(c) Cameron Liang 
+#						University of Chicago
+#     				    jwliang@oddjob.uchicago.edu
+#
+# Process model outputs such as corner plot, GR plot, and associated    
+# ascii data files. 
+# 
+################################################################################
+
+
+
+
+
 import numpy as np
 import matplotlib.pyplot as pl
 import corner

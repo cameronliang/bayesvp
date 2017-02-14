@@ -169,7 +169,7 @@ def bvp_mcmc(config_fname):
 			# Load config parameter object 
 			obs_spec = DefineParams(config_fname_ncomp)
 
-			# Run MCMC 
+			# Run MCMC
 			bvp_mcmc_single(obs_spec,obs_spec.chain_fname)
 
 			# compute values of aic, bic or bf

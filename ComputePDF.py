@@ -108,6 +108,7 @@ def write_pdf(x,pdf,output_path,x_name,ion_name):
         f.write('%.4f\t%.16f\n' % (x[i], pdf[i]))
     f.close()
 
+    print('Written %s' % fname)
 
 def main(config_fname,ion_name,nbins,interp_kind):
     """Extract PDF of property x (logN, b, or z)"""
@@ -117,7 +118,7 @@ def main(config_fname,ion_name,nbins,interp_kind):
     x_name = 'logN';
     left_boundary_x = 0; right_boundary_x = 22 
 
-    ouput_path = obs_spec.mcmc_outputpath + '/posterior/'
+    ouput_path = obs_spec.mcmc_outputpath + '/posterior'
     if not os.path.isdir(ouput_path):
         os.mkdir(ouput_path)
 
