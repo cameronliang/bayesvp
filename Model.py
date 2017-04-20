@@ -254,6 +254,23 @@ def generic_prediction(alpha, obs_spec_obj):
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
+
+class FluxModel():
+
+    def __init__(self):
+        pass
+    
+
+    def vp_model(self,alpha):
+        return 
+
+    def continuum_model(self,m,b):
+        return 
+
+    def convolve_lsf(self):
+        return 
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as pl

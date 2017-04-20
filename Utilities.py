@@ -342,6 +342,16 @@ def compute_burin_GR(gr_fname,gr_threshold=1.01):
 # Others
 ###############################################################################
 
+def straight_line(x,m,b):
+	return (m*x + b) #/ np.mean((m*x + b))
+
+def linear_continuum(wave,flux,m,b):
+	continuum = straight_line(wave,m,b)
+	newflux = flux * continuum
+	return newflux
+	#new_flux = flux * straight_line(wave - np.mean(wave),m,b)
+	#return new_flux
+
 def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 	"""
 	Extract the ionic and tranisiton properties based on the atom and 
@@ -387,3 +397,8 @@ def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 
 def printline():
 	print("---------------------------------------------------------------------")
+
+
+def getCodeDir():
+
+	return os.path.dirname(os.path.realpath(__file__))
