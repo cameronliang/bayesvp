@@ -228,6 +228,7 @@ def generic_prediction(alpha, obs_spec_obj):
     spec = [] 
     for i in xrange(obs_spec_obj.n_component):
         # Re-group parameters intro [logN, b,z] for each component
+
         temp_alpha = np.zeros(3)
         for j in xrange(3):
             # NaN indicates parameter has been fixed
@@ -236,7 +237,7 @@ def generic_prediction(alpha, obs_spec_obj):
                 temp_alpha[j] = float(obs_spec_obj.vp_params[i][j][:-1])
             else: 
                 # access the index map from flags to alpha 
-                temp_alpha[j] = alpha[component_flags[i][j]] 
+                temp_alpha[j] = alpha[int(component_flags[i][j])] 
 
 
         # Compute spectrum for each component, region, and transition.
@@ -254,24 +255,32 @@ def generic_prediction(alpha, obs_spec_obj):
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
+def straigt_line(wave,m,b):
+    return cm_km*c*((wave-np.median(wave))/wave)*m+b
 
-class FluxModel():
+def continuum_model_flux(alpha,obs_spec_obj):
+    """
+    Model function that includes continuum (linear order)
+    """
+    model_flux = generic_prediction(alpha[:-2],obs_spec_obj)
+    #local_continuum = straigt_line(obs_spec_obj.wave,alpha[-1],alpha[-2])
+    local_continuum = straigt_line(obs_spec_obj.wave,0.0005,1.0)
 
-    def __init__(self):
-        pass
-    
-
-    def vp_model(self,alpha):
-        return 
-
-    def continuum_model(self,m,b):
-        return 
-
-    def convolve_lsf(self):
-        return 
-
+    return model_flux * local_continuum
 
 if __name__ == '__main__':
+    import pylab as pl
+    import sys
+    from Config import DefineParams
+    config_fname = sys.argv[1]
+    obs_spec = DefineParams(config_fname)    
+    obs_spec.print_config_params()
+
+    alpha = np.array([[15,30,0.0]])
+    model_flux = continuum_model_flux(alpha,obs_spec)
+    pl.step(obs_spec.wave,model_flux,'k')
+    pl.show()
+    exit()
 
     import matplotlib.pyplot as pl
     wave = WavelengthArray(1200,1230,2)

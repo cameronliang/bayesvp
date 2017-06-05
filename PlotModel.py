@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import corner
 
-from Model import generic_prediction
+from Model import generic_prediction,continuum_model_flux
 from Utilities import write_mcmc_stats, compute_burin_GR
 from Config import DefineParams
 
@@ -31,7 +31,8 @@ class ProcessModel:
 
         # Obtain best fit parameters and model flux (medians of the chains)
         temp_flags = config_param.vp_params_flags[~np.isnan(config_param.vp_params_flags)]
-        self.n_params = len(list(set(temp_flags)))
+        #self.n_params = len(list(set(temp_flags)))
+        self.n_params = config_param.n_params
 
         # MCMC chains
         self.burnin = compute_burin_GR(config_param.chain_fname + '_GR.dat')
@@ -39,7 +40,9 @@ class ProcessModel:
         
         # Best fit model parameters and spectrum flux
         self.alpha = np.median(self.samples,axis=0)
-        self.model_flux = generic_prediction(self.alpha,config_param)
+        #self.model_flux = generic_prediction(self.alpha,config_param)
+        self.model_flux = continuum_model_flux(self.alpha,config_param)
+        
 
     def plot_model_comparison(self,redshift,dv,central_wave=None):
         """
@@ -110,9 +113,9 @@ class ProcessModel:
                                 r"$z \times 10^5$"],show_titles=True,
                                 title_kwargs={"fontsize": 15})
         else:  
-            fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],
-                                show_titles=True,title_kwargs={"fontsize": 15})
-
+            #fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],
+            #                    show_titles=True,title_kwargs={"fontsize": 15})
+            fig = corner.corner(self.samples)
         output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.pdf'
         pl.savefig(output_name,bbox_inches='tight',dpi=100)
         pl.clf()

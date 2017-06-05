@@ -6,11 +6,14 @@
 #
 # Defined the likelihood and posterior distribution for the model given the 
 # data.      
+
+# Todo: 
+# reset observed spectrum into velocity space, and new flux F' = F - <F>, where <F'> ~ 1. 
 ################################################################################
 
 import numpy as np
 
-from Model import generic_prediction
+from Model import generic_prediction,continuum_model_flux
 
 np.seterr(all='ignore') # Ignore floating point warnings.
 
@@ -49,7 +52,8 @@ class Posterior(object):
         """
 
         # Flux of the model
-        model_flux = generic_prediction(alpha,self.obs_spec)
+        model_flux = continuum_model_flux(alpha,self.obs_spec)
+        #model_flux = generic_prediction(alpha,self.obs_spec)
         
         resid = self.obs_spec.flux - model_flux
 
@@ -73,7 +77,7 @@ class Posterior(object):
         # Define these for clarity
         min_logN,max_logN = self.obs_spec.priors[0] 
         min_b,max_b       = self.obs_spec.priors[1]
-        min_z,max_z         = self.obs_spec.priors[2]
+        min_z,max_z       = self.obs_spec.priors[2]
 
         # Select the parameters that are free or tie (i.e not fixed)
         final_vp_params_type = self.obs_spec.vp_params_type[~np.isnan(self.obs_spec.vp_params_flags)]
@@ -81,7 +85,8 @@ class Posterior(object):
         sum_logN_prior = 0; sum_b_prior = 0; sum_z_prior = 0;
 
         model_redshifts = []
-        for i in xrange(len(alpha)):
+        
+        for i in xrange(len(final_vp_params_type)):
             if final_vp_params_type[i] == 'logN':
                 sum_logN_prior += tophat_prior(alpha[i],min_logN,max_logN)
             elif final_vp_params_type[i] == 'b':
@@ -94,6 +99,16 @@ class Posterior(object):
         model_redshifts = np.array(model_redshifts)
         if not all(sorted(model_redshifts) == model_redshifts):
             sum_z_prior = -np.inf 
+
+        if self.obs_spec.cont_normalize:
+            # linear continuum slope and intercept priors
+            contiuum_prior = 0
+            min_b,max_b = 0.8, 1.2
+            min_m,max_m = -0.001, 0.001
+            contiuum_prior += tophat_prior(alpha[-1],min_b,max_b)
+            contiuum_prior += tophat_prior(alpha[-2],min_m,max_m)
+
+            return sum_logN_prior + sum_b_prior + sum_z_prior + contiuum_prior
 
         return sum_logN_prior + sum_b_prior + sum_z_prior
 

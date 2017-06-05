@@ -18,7 +18,9 @@ from Utilities import determine_autovp,model_info_criterion,\
 
 def _create_walkers_init(obs_spec):
 	"""
-	Initialize walkers with the free parameters
+	Initialize walkers with the free parameters. 
+	Note that the initialization sets the number of parameters
+	in the sampler. This initialization depends on the config file. 
 
 	Parameters
 	-----------
@@ -65,9 +67,18 @@ def _create_walkers_init(obs_spec):
 			p0[i] = np.random.uniform(obs_spec.priors[2][0],
 									obs_spec.priors[2][1],
 									size=obs_spec.nwalkers)
-		
+
+	if obs_spec.cont_normalize:
+		p1 = np.zeros((2,obs_spec.nwalkers))
+		p1[0] = np.random.uniform(-1e-2,1e-2,size=obs_spec.nwalkers )# slope
+		p1[1] = np.random.uniform(-1e-2,1e-2,size=obs_spec.nwalkers) # intercept
+
+		p = np.concatenate((p0,p1),axis=0)
+		return np.transpose(p)
 
 	return np.transpose(p0)
+
+
 
 def bvp_mcmc_single(obs_spec,chain_filename_ncomp = None):
 	"""
@@ -103,12 +114,14 @@ def bvp_mcmc_single(obs_spec,chain_filename_ncomp = None):
 
 	if obs_spec.mcmc_sampler.lower() == 'emcee':
 		import emcee
-		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, threads=obs_spec.nthreads) 
+		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, 
+										threads=obs_spec.nthreads) 
 		sampler.run_mcmc(p0,obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', np.swapaxes(sampler.chain,0,1))
 	elif obs_spec.mcmc_sampler.lower() == 'kombine':
 		import kombine
-		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, processes=obs_spec.nthreads)
+		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, 
+								  processes=obs_spec.nthreads)
 		# First do a rough burn in based on accetance rate.
 		p_post_q = sampler.burnin(p0)
 		p_post_q = sampler.run_mcmc(obs_spec.nsteps)

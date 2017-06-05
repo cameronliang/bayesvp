@@ -25,9 +25,9 @@ class DefineParams:
     lines, spec_path, chain_short_fname, 
     chain_fname, mcmc_outputpath: str
         Files I/O
-    nwalkers, nsteps, nthreads: ints    
+    nwalkers, nsteps, nthreads: int    
         MCMC parameters
-    wave,flux,error: arrays
+    wave,flux,error: array
         Selected region of the input spectral data
     wave_begins, wave_ends: array_like
         Selected wavelength regions bounds
@@ -81,7 +81,10 @@ class DefineParams:
                 # Default
                 self.model_selection = 'bic'      
                 self.mcmc_sampler    = 'kombine'
-                
+                self.cont_normalize  = False
+
+                # Set up true by a flag in config 
+                self.cont_normalize  = True
                 # Change keys if defined in config 
                 for key in line[3:]:
                     if key in ['kombine','emcee']:
@@ -152,7 +155,8 @@ class DefineParams:
         # Users can add additional row to the file for new atomic data
 
         # --------
-        # self.vp_params, self.transitions_params_array, self.vp_params_flags, # self.vp_params_type, self.n_component 
+        # self.vp_params, self.transitions_params_array, self.vp_params_flags, 
+        # self.vp_params_type, self.n_component 
         ########################################################################
         
 
@@ -232,7 +236,10 @@ class DefineParams:
         # Model uses these to construct sets of (logN, b, z) for each component
         self.vp_params_type  = np.array(vp_params_type)
         self.vp_params_flags = np.array(flags)
-
+        self.n_params        = n_free_params_counter
+        if self.cont_normalize:
+            self.n_params = self.n_params + 2
+        
 
         # Make directories for data products
         self.mcmc_outputpath = self.spec_path+'/bvp_chains_' + str(self.redshift)
