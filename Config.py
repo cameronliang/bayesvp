@@ -64,15 +64,24 @@ class DefineParams:
         # self.nthreads
         ########################################################################
         # Paths and fname strings
+        self.cont_normalize  = False
+
         for line in self.lines:
             line = filter(None,line.split(' '))
+
             if 'spec_path' in line or 'input' in line or 'spectrum' in line:
                 if line[1] == 'test_path_to_spec':
                     self.spec_path = os.path.dirname(os.path.abspath(__file__)) + '/tests/'
                 else:
                     self.spec_path = line[1]
+
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
+
+            elif 'continuum' in line or 'cont' in line:
+                self.cont_normalize  = True
+                self.cont_nparams = int(line[1]) + 1 # n_param = poly degree + 1 (offset)
+
             elif 'mcmc_params' in line or 'mcmc' in line:
                 self.nwalkers = int(line[1])
                 self.nsteps   = int(line[2])
@@ -81,10 +90,7 @@ class DefineParams:
                 # Default
                 self.model_selection = 'bic'      
                 self.mcmc_sampler    = 'kombine'
-                self.cont_normalize  = False
 
-                # Set up true by a flag in config 
-                self.cont_normalize  = True
                 # Change keys if defined in config 
                 for key in line[3:]:
                     if key in ['kombine','emcee']:
@@ -238,8 +244,7 @@ class DefineParams:
         self.vp_params_flags = np.array(flags)
         self.n_params        = n_free_params_counter
         if self.cont_normalize:
-            self.n_params = self.n_params + 2
-        
+            self.n_params = self.n_params + self.cont_nparams
 
         # Make directories for data products
         self.mcmc_outputpath = self.spec_path+'/bvp_chains_' + str(self.redshift)
@@ -330,11 +335,13 @@ class DefineParams:
                     print('z center_z |min_dv| |max_dv|')
                     exit()
                 self.priors[2] = [min_z,max_z]
+    
     def print_config_params(self):
         printline()
         print('Config file: %s'     % self.config_fname)
         print('Spectrum Path: %s'     % self.spec_path)
         print('Spectrum name: %s'     % self.spec_short_fname)
+        
         print('Fitting %i components with transitions: ' % self.n_component)
         for i in xrange(len(self.transitions_params_array)):
             for j in xrange(len(self.transitions_params_array[i])):
@@ -349,6 +356,9 @@ class DefineParams:
         print('Selected data wavelegnth region:')
         for i in xrange(len(self.wave_begins)):
             print('    [%.3f, %.3f]' % (self.wave_begins[i],self.wave_ends[i])) 
+        
+        if self.cont_normalize:
+            print('Continuum polynomial degree: %i'     % self.cont_nparams)
         print('MCMC Sampler: %s' % self.mcmc_sampler)
         print('Model selection method: %s' % self.model_selection)
         print('Walkers,steps,threads : %i,%i,%i' % (self.nwalkers,self.nsteps,self.nthreads))

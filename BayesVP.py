@@ -70,8 +70,8 @@ def _create_walkers_init(obs_spec):
 
 	if obs_spec.cont_normalize:
 		p1 = np.zeros((2,obs_spec.nwalkers))
-		p1[0] = np.random.uniform(-1e-2,1e-2,size=obs_spec.nwalkers )# slope
-		p1[1] = np.random.uniform(-1e-2,1e-2,size=obs_spec.nwalkers) # intercept
+		p1[0] = np.random.uniform(-1,1,size=obs_spec.nwalkers ) # slope
+		p1[1] = np.random.uniform(-1,1,size=obs_spec.nwalkers)  # intercept
 
 		p = np.concatenate((p0,p1),axis=0)
 		return np.transpose(p)
@@ -109,23 +109,27 @@ def bvp_mcmc_single(obs_spec,chain_filename_ncomp = None):
 	p0 = _create_walkers_init(obs_spec)
 	ndim = np.shape(p0)[1]
 
+
 	# Define the natural log of the posterior 
 	lnprob = Posterior(obs_spec)
 
 	if obs_spec.mcmc_sampler.lower() == 'emcee':
 		import emcee
 		sampler = emcee.EnsembleSampler(obs_spec.nwalkers, ndim, lnprob, 
-										threads=obs_spec.nthreads) 
+										threads=obs_spec.nthreads)
 		sampler.run_mcmc(p0,obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', np.swapaxes(sampler.chain,0,1))
+	
 	elif obs_spec.mcmc_sampler.lower() == 'kombine':
 		import kombine
-		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob, 
+		sampler = kombine.Sampler(obs_spec.nwalkers, ndim, lnprob,
 								  processes=obs_spec.nthreads)
+		
 		# First do a rough burn in based on accetance rate.
 		p_post_q = sampler.burnin(p0)
 		p_post_q = sampler.run_mcmc(obs_spec.nsteps)
 		np.save(chain_filename_ncomp + '.npy', sampler.chain)
+	
 	else:
 		print('No MCMC sampler selected.\n')
 	print("Written chain: %s.npy\n" % chain_filename_ncomp)

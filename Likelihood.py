@@ -103,8 +103,8 @@ class Posterior(object):
         if self.obs_spec.cont_normalize:
             # linear continuum slope and intercept priors
             contiuum_prior = 0
-            min_b,max_b = 0.8, 1.2
-            min_m,max_m = -0.001, 0.001
+            min_b,max_b = -10, 10.
+            min_m,max_m = -5., 5.
             contiuum_prior += tophat_prior(alpha[-1],min_b,max_b)
             contiuum_prior += tophat_prior(alpha[-2],min_m,max_m)
 
@@ -121,6 +121,7 @@ class Posterior(object):
         lnprob: float
             Natural log of posterior probability
         """
+
         lp = self.lnprior(alpha)
         
         if np.isinf(lp):

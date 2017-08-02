@@ -106,18 +106,22 @@ class ProcessModel:
         Make triangle plot for visuaizaliton of the 
         multi-dimensional posterior
         """
+        pl.clf()
+        pl.figure(1)
         if self.n_params == 3:
             self.samples[:,2] = self.samples[:,2] * 1e5  
-            fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],
-                                labels=[r"$\log N\,[\rm cm^{-3}]$",r"$b\,[\rm km/s]$", 
-                                r"$z \times 10^5$"],show_titles=True,
-                                title_kwargs={"fontsize": 15})
-        else:  
-            #fig = corner.corner(self.samples,bins=30,quantiles=[0.16, 0.5, 0.84],
-            #                    show_titles=True,title_kwargs={"fontsize": 15})
-            fig = corner.corner(self.samples)
-        output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.pdf'
-        pl.savefig(output_name,bbox_inches='tight',dpi=100)
+            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
+            labels=[r'$\log N\,[\rm cm^{-3}]$',r'$b\,[\rm km s^{-1}]$',r'$z \times 1e5$'],
+            fontsize=20,
+            show_titles=True,title_kwargs={"fontsize": 15})
+        elif self.n_params == 5:
+            self.samples[:,2] = self.samples[:,2] * 1e5  
+            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
+            fontsize=20,
+            show_titles=True,title_kwargs={"fontsize": 15})
+        output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.png'
+
+        pl.savefig(output_name,bbox_inches='tight')
         pl.clf()
 
         print('Written %s' % output_name)
@@ -171,6 +175,7 @@ if __name__ == '__main__':
     else:
         print('python full_path_to_config redshift dv_range_for_plotting')
         exit()
+
 
     config_params = DefineParams(config_fname)
     output_model = ProcessModel(config_params)    

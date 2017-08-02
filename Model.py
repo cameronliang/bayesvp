@@ -255,16 +255,17 @@ def generic_prediction(alpha, obs_spec_obj):
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
-def straigt_line(wave,m,b):
-    return cm_km*c*((wave-np.median(wave))/wave)*m+b
+def straigt_line(wave,flux, m,b):
+    return cm_km*c*((wave-np.median(wave))/wave)*m+b + np.median(flux)
 
 def continuum_model_flux(alpha,obs_spec_obj):
     """
     Model function that includes continuum (linear order)
     """
+
     model_flux = generic_prediction(alpha[:-2],obs_spec_obj)
-    #local_continuum = straigt_line(obs_spec_obj.wave,alpha[-1],alpha[-2])
-    local_continuum = straigt_line(obs_spec_obj.wave,0.0005,1.0)
+    local_continuum = straigt_line(obs_spec_obj.wave,obs_spec_obj.flux,alpha[-1],alpha[-2])
+    #local_continuum = straigt_line(obs_spec_obj.wave,0.0005,1.0)
 
     return model_flux * local_continuum
 
