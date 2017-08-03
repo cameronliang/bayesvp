@@ -63,9 +63,11 @@ class DefineParams:
         # self.spec_path, self.chain_fname, self.nwalkers, self.nsteps,
         # self.nthreads
         ########################################################################
-        # Paths and fname strings
-        self.cont_normalize  = False
+        
+        # continuum model preset to false
+        self.cont_normalize  = False; self.cont_nparams = 0
 
+        # Paths and fname strings
         for line in self.lines:
             line = filter(None,line.split(' '))
 
@@ -358,7 +360,7 @@ class DefineParams:
             print('    [%.3f, %.3f]' % (self.wave_begins[i],self.wave_ends[i])) 
         
         if self.cont_normalize:
-            print('Continuum polynomial degree: %i'     % self.cont_nparams)
+            print('Continuum polynomial degree: %i'     % (self.cont_nparams - 1))
         print('MCMC Sampler: %s' % self.mcmc_sampler)
         print('Model selection method: %s' % self.model_selection)
         print('Walkers,steps,threads : %i,%i,%i' % (self.nwalkers,self.nsteps,self.nthreads))

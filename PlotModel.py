@@ -114,7 +114,7 @@ class ProcessModel:
             labels=[r'$\log N\,[\rm cm^{-3}]$',r'$b\,[\rm km s^{-1}]$',r'$z \times 1e5$'],
             fontsize=20,
             show_titles=True,title_kwargs={"fontsize": 15})
-        elif self.n_params == 5:
+        else:
             self.samples[:,2] = self.samples[:,2] * 1e5  
             fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
             fontsize=20,

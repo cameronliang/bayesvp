@@ -58,7 +58,8 @@ class Posterior(object):
         resid = self.obs_spec.flux - model_flux
 
         # Natural log of gaussian likelihood with normalization included 
-        ln_likelihood = np.sum(0.5*np.log(2*np.pi*self.obs_spec.dflux**2)             -0.5*resid**2/self.obs_spec.dflux**2)
+        ln_likelihood = np.sum(0.5*np.log(2*np.pi*self.obs_spec.dflux**2)
+                              -0.5*resid**2/self.obs_spec.dflux**2)
 
         if np.isnan(ln_likelihood):
             return -np.inf
@@ -103,10 +104,9 @@ class Posterior(object):
         if self.obs_spec.cont_normalize:
             # linear continuum slope and intercept priors
             contiuum_prior = 0
-            min_b,max_b = -10, 10.
-            min_m,max_m = -5., 5.
-            contiuum_prior += tophat_prior(alpha[-1],min_b,max_b)
-            contiuum_prior += tophat_prior(alpha[-2],min_m,max_m)
+
+            for i in range(1,self.obs_spec.cont_nparams+1):
+                contiuum_prior += tophat_prior(alpha[-i],-1,1)
 
             return sum_logN_prior + sum_b_prior + sum_z_prior + contiuum_prior
 

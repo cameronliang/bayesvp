@@ -69,9 +69,10 @@ def _create_walkers_init(obs_spec):
 									size=obs_spec.nwalkers)
 
 	if obs_spec.cont_normalize:
-		p1 = np.zeros((2,obs_spec.nwalkers))
-		p1[0] = np.random.uniform(-1,1,size=obs_spec.nwalkers ) # slope
-		p1[1] = np.random.uniform(-1,1,size=obs_spec.nwalkers)  # intercept
+		p1 = np.zeros((obs_spec.cont_nparams,obs_spec.nwalkers))
+
+		for i in range(obs_spec.cont_nparams):
+			p1[i] = np.random.uniform(-1,1,size=obs_spec.nwalkers )
 
 		p = np.concatenate((p0,p1),axis=0)
 		return np.transpose(p)

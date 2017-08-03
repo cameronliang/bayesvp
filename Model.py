@@ -255,19 +255,24 @@ def generic_prediction(alpha, obs_spec_obj):
     # Return the convolved model flux with LSF
     return np.product(spec,axis=0)
 
-def straigt_line(wave,flux, m,b):
-    return cm_km*c*((wave-np.median(wave))/wave)*m+b + np.median(flux)
+def poly_continuum(wave,flux, *params):
+    # arbitrary polynomial continuum
+    x = wave-np.median(wave)
+    return sum([p*(x**i) for i, p in enumerate(params)]) + np.median(flux)
 
 def continuum_model_flux(alpha,obs_spec_obj):
     """
     Model function that includes continuum (linear order)
     """
-
-    model_flux = generic_prediction(alpha[:-2],obs_spec_obj)
-    local_continuum = straigt_line(obs_spec_obj.wave,obs_spec_obj.flux,alpha[-1],alpha[-2])
-    #local_continuum = straigt_line(obs_spec_obj.wave,0.0005,1.0)
-
-    return model_flux * local_continuum
+    
+    if obs_spec_obj.cont_normalize:
+        num_boundary = obs_spec_obj.cont_nparams; 
+        model_flux = generic_prediction(alpha[:-num_boundary],obs_spec_obj)
+        local_continuum = poly_continuum(obs_spec_obj.wave,obs_spec_obj.flux,*alpha[-num_boundary:])
+        return model_flux * local_continuum
+    else:
+        model_flux = generic_prediction(alpha,obs_spec_obj)
+        return model_flux
 
 if __name__ == '__main__':
     import pylab as pl
@@ -277,10 +282,18 @@ if __name__ == '__main__':
     obs_spec = DefineParams(config_fname)    
     obs_spec.print_config_params()
 
-    alpha = np.array([[15,30,0.0]])
+    a0 = 0.1
+    a1 = 0.2
+    a2 = 0.3
+    alpha = np.array([14,50,0.0,a0,a1,a2])
     model_flux = continuum_model_flux(alpha,obs_spec)
-    pl.step(obs_spec.wave,model_flux,'k')
-    pl.show()
+    x = ((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave) # 
+    #pl.step(x,model_flux,'k')
+    v = cm_km*c*((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave)
+    pl.step(v,model_flux,'b')
+    pl.step(v,obs_spec.flux,'k')
+    pl.savefig('./temp.png')
+
     exit()
 
     import matplotlib.pyplot as pl
