@@ -87,8 +87,9 @@ def model_info_criterion(obs_spec_obj):
 	Use either aic,bic or bayes factor for model selection
 
 	Aikake Information Criterion (AIC); 
-	see Eqn (4.17) Ivezic+ "Statistics, Data Mining and Machine Learning 
-	in Astronomy" (2014)
+	Bayesian Information Criterion (BIC); 
+	see Eqn (4.17) and Eqn (5.35) Ivezic+ "Statistics, 
+	Data Mining and Machine Learning in Astronomy" (2014)
 	"""
 
 	if obs_spec_obj.model_selection.lower() in ('odds','bf'):
@@ -120,7 +121,7 @@ def model_info_criterion(obs_spec_obj):
 def estimate_bayes_factor(traces, logp, r=0.05):
 	"""
 	Esitmate Odds ratios in a random subsample of the chains in MCMC
-	AstroML (see fig 5.2.4)
+	AstroML (see Eqn 5.127, pg 237)
 	"""
 	
 	ndim, nsteps = traces.shape # [ndim,number of steps in chain]
@@ -157,7 +158,8 @@ def local_density_bf(obs_spec_obj):
 	samples = chain.reshape((-1,n_params))
 
 	# KDE estimate of the sample
-	n_sample = 200
+	sample_fraction = 0.2
+	n_sample = (obs_spec_obj.nsteps)*sample_fraction
 	ksample = ClusteredKDE(samples)
 	sub_sample = ksample.draw(n_sample) 
 

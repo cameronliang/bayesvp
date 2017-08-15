@@ -275,7 +275,7 @@ def continuum_model_flux(alpha,obs_spec_obj):
         return model_flux
 
 if __name__ == '__main__':
-    import pylab as pl
+    import matplotlib.pyplot as plt
     import sys
     from Config import DefineParams
     config_fname = sys.argv[1]
@@ -290,9 +290,9 @@ if __name__ == '__main__':
     x = ((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave) # 
     #pl.step(x,model_flux,'k')
     v = cm_km*c*((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave)
-    pl.step(v,model_flux,'b')
-    pl.step(v,obs_spec.flux,'k')
-    pl.savefig('./temp.png')
+    plt.step(v,model_flux,'b')
+    plt.step(v,obs_spec.flux,'k')
+    plt.savefig('./temp.png')
 
     exit()
 
@@ -301,7 +301,7 @@ if __name__ == '__main__':
 
     flux = simple_spec(15,20,0,wave)
     #print flux
-    pl.step(wave,flux)
-    pl.xlim([1214,1217])
-    pl.ylim([0,1.3])
-    pl.show()
+    plt.step(wave,flux)
+    plt.xlim([1214,1217])
+    plt.ylim([0,1.3])
+    plt.show()
