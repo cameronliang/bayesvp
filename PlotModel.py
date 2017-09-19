@@ -14,11 +14,11 @@
 
 
 import numpy as np
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import corner
 
 from Model import generic_prediction,continuum_model_flux
-from Utilities import write_mcmc_stats, compute_burin_GR
+from Utilities import write_mcmc_stats, compute_burnin_GR
 from Config import DefineParams
 
 class ProcessModel:
@@ -58,23 +58,23 @@ class ProcessModel:
 
         obs_spec_wave = self.config_param.wave / (1+redshift) 
         obs_spec_dv = c*(obs_spec_wave - central_wave) / central_wave
-        pl.rc('text', usetex=True)
+        plt.rc('text', usetex=True)
 
-        pl.figure(1)
-        pl.step(obs_spec_dv,self.config_param.flux,'k',label=r'$\rm Data$')
-        pl.step(obs_spec_dv,self.model_flux,'b',lw=2,label=r'$\rm Best\,Fit$')
-        pl.step(obs_spec_dv,self.config_param.dflux,'r')
-        pl.axhline(1,ls='--',c='g',lw=1.2)
-        pl.axhline(0,ls='--',c='g',lw=1.2)
-        pl.ylim([-0.1,1.4])
-        pl.xlim([-dv,dv])
-        pl.xlabel(r'$dv\,[\rm km/s]$')
-        pl.ylabel(r'$\rm Normalized\,Flux$')
-        pl.legend(loc=3)
+        plt.figure(1)
+        plt.step(obs_spec_dv,self.config_param.flux,'k',label=r'$\rm Data$')
+        plt.step(obs_spec_dv,self.model_flux,'b',lw=2,label=r'$\rm Best\,Fit$')
+        plt.step(obs_spec_dv,self.config_param.dflux,'r')
+        plt.axhline(1,ls='--',c='g',lw=1.2)
+        plt.axhline(0,ls='--',c='g',lw=1.2)
+        plt.ylim([-0.1,1.4])
+        plt.xlim([-dv,dv])
+        plt.xlabel(r'$dv\,[\rm km/s]$')
+        plt.ylabel(r'$\rm Normalized\,Flux$')
+        plt.legend(loc=3)
         
         output_name = self.config_param.processed_product_path + '/modelspec_' + self.config_param.chain_short_fname + '.pdf' 
-        pl.savefig(output_name,bbox_inches='tight',dpi=100)
-        pl.clf()
+        plt.savefig(output_name,bbox_inches='tight',dpi=100)
+        plt.clf()
         print('Written %s' % output_name)
 
     def corner_plot(self):
@@ -82,8 +82,8 @@ class ProcessModel:
         Make triangle plot for visuaizaliton of the 
         multi-dimensional posterior
         """
-        pl.clf()
-        pl.figure(1)
+        plt.clf()
+        plt.figure(1)
         if self.n_params == 3:
             self.samples[:,2] = self.samples[:,2] * 1e5  
             fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
@@ -96,8 +96,8 @@ class ProcessModel:
 
         output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.png'
 
-        pl.savefig(output_name,bbox_inches='tight')
-        pl.clf()
+        plt.savefig(output_name,bbox_inches='tight')
+        plt.clf()
 
         print('Written %s' % output_name)
 
@@ -110,18 +110,18 @@ class ProcessModel:
         data = np.loadtxt(gr_fname,unpack=True)
         steps = data[0]; grs = data[1:]
         
-        pl.figure(1,figsize=(6,6))
+        plt.figure(1,figsize=(6,6))
         for i in xrange(len(grs)):
-            pl.plot(steps,grs[i],label=str(i))
-        pl.legend(loc='best')
-        pl.xscale('log')
+            plt.plot(steps,grs[i],label=str(i))
+        plt.legend(loc='best')
+        plt.xscale('log')
 
-        pl.xlabel(r'$N(\rm{steps})$')
-        pl.ylabel(r'$R_{\rm GR}$')
+        plt.xlabel(r'$N(\rm{steps})$')
+        plt.ylabel(r'$R_{\rm GR}$')
 
         output_name = self.config_param.processed_product_path + '/GR_' + self.config_param.chain_short_fname + '.pdf' 
-        pl.savefig(output_name,bbox_inches='tight',dpi=100)
-        pl.clf()
+        plt.savefig(output_name,bbox_inches='tight',dpi=100)
+        plt.clf()
 
         print('Written %s' % output_name)
 

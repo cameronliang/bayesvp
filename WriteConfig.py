@@ -103,6 +103,8 @@ class interactive_QnA:
         f.write('z    %.6f %.2f\n' % (self.central_redshift,self.velocity_range))
         f.close()
 
+        print('Written config file: %s\n' % self.config_fname)
+
 if __name__ == '__main__':
 
     config = interactive_QnA()

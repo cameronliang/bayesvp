@@ -6,9 +6,6 @@
 #
 # Defined the likelihood and posterior distribution for the model given the 
 # data.      
-
-# Todo: 
-# reset observed spectrum into velocity space, and new flux F' = F - <F>, where <F'> ~ 1. 
 ################################################################################
 
 import numpy as np

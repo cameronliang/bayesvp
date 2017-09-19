@@ -16,7 +16,7 @@ import sys
 import os
 
 from Config import DefineParams
-from Utilities import compute_burin_GR
+from Utilities import compute_burnin_GR
 
 def extract_chain(obs_spec,para_name):
     """
@@ -28,7 +28,7 @@ def extract_chain(obs_spec,para_name):
     chain = np.load(obs_spec.chain_fname + '.npy')
     my_dict = {'logN':0, 'b':1,'z':2}
     col_num = my_dict[para_name]
-    burnin = compute_burin_GR(obs_spec.chain_fname + '_GR.dat')
+    burnin = compute_burnin_GR(obs_spec.chain_fname + '_GR.dat')
     
     # return 1D chain of parameter x 
     return chain[burnin:,:,col_num].flatten()

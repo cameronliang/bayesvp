@@ -274,7 +274,8 @@ def continuum_model_flux(alpha,obs_spec_obj):
         model_flux = generic_prediction(alpha,obs_spec_obj)
         return model_flux
 
-if __name__ == '__main__':
+def continuum_test():
+
     import matplotlib.pyplot as plt
     import sys
     from Config import DefineParams
@@ -294,14 +295,18 @@ if __name__ == '__main__':
     plt.step(v,obs_spec.flux,'k')
     plt.savefig('./temp.png')
 
-    exit()
+def produce_simplespec(wave_begin,wave_end,dv,logN,b,z):
 
-    import matplotlib.pyplot as pl
-    wave = WavelengthArray(1200,1230,2)
+    import matplotlib.pyplot as plt
+    wave = WavelengthArray(wave_begin,wave_end,dv)
 
-    flux = simple_spec(15,20,0,wave)
-    #print flux
+    flux = simple_spec(logN,b,z,wave,'H','I')
+
     plt.step(wave,flux)
-    plt.xlim([1214,1217])
+    plt.xlim([1214,1218])
     plt.ylim([0,1.3])
-    plt.show()
+    plt.savefig('./temp.png')
+
+if __name__ == '__main__':
+
+    produce_simplespec(1214,1218,2.0,14.,30,0.0)

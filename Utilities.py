@@ -225,14 +225,14 @@ def read_mcmc_fits(config_params_obj,para_name):
 	my_dict = {'logN':0, 'b':1,'z':2}
 	col_num = my_dict[para_name]
 	chain = np.load(config_params_obj.chain_fname + '.npy')
-	burnin = compute_burin_GR(config_params_obj.chain_fname + '_GR.dat')
+	burnin = compute_burnin_GR(config_params_obj.chain_fname + '_GR.dat')
 	x = chain[burnin:,:,col_num].flatten()
 	xmed,xm,xsd,xcfl11, xcfl12, xcfl21,xcfl22 = compute_stats(x)
 	return xmed 
 
 def write_mcmc_stats(config_params_obj,output_fname):
 	chain = np.load(config_params_obj.chain_fname + '.npy')
-	burnin = compute_burin_GR(config_params_obj.chain_fname + '_GR.dat')
+	burnin = compute_burnin_GR(config_params_obj.chain_fname + '_GR.dat')
 	
 	f = open(output_fname,'w')
 	f.write('x_med\tx_mean\tx_std\tx_cfl11\tx_cfl12\t x_cfl21\tx_cfl22\n')
@@ -314,7 +314,7 @@ def gr_indicator(chain):
         
 	return Rgrs 
 
-def compute_burin_GR(gr_fname,gr_threshold=1.01):
+def compute_burnin_GR(gr_fname,gr_threshold=1.01):
 	"""
 	Calculate the steps where the chains are 
 	converged given a Gelman-Rubin (GR) threshod. 
