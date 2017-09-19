@@ -326,7 +326,7 @@ def compute_burin_GR(gr_fname,gr_threshold=1.01):
 		and the rest as the values of GR for each model parameter
 	gr_threshold:float
 		The threshold for chains to be considered as converged.
-		Default value = 1.05
+		Default value = 1.01
 	Returns
 	----------
 	burnin_steps: int

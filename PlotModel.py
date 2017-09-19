@@ -77,6 +77,30 @@ class ProcessModel:
         pl.clf()
         print('Written %s' % output_name)
 
+    def corner_plot(self):
+        """
+        Make triangle plot for visuaizaliton of the 
+        multi-dimensional posterior
+        """
+        pl.clf()
+        pl.figure(1)
+        if self.n_params == 3:
+            self.samples[:,2] = self.samples[:,2] * 1e5  
+            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
+            labels=[r'$\log N\,[\rm cm^{-3}]$',r'$b\,[\rm km s^{-1}]$',r'$z \times 1e5$'],
+            show_titles=True,title_kwargs={"fontsize": 16})
+        else:
+            self.samples[:,2] = self.samples[:,2] * 1e5  
+            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
+            show_titles=True,title_kwargs={"fontsize": 16})
+
+        output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.png'
+
+        pl.savefig(output_name,bbox_inches='tight')
+        pl.clf()
+
+        print('Written %s' % output_name)
+
     def plot_gr_indicator(self):
         """
         Make plot for the evolution of GR indicator 
@@ -101,29 +125,6 @@ class ProcessModel:
 
         print('Written %s' % output_name)
 
-    def corner_plot(self):
-        """
-        Make triangle plot for visuaizaliton of the 
-        multi-dimensional posterior
-        """
-        pl.clf()
-        pl.figure(1)
-        if self.n_params == 3:
-            self.samples[:,2] = self.samples[:,2] * 1e5  
-            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
-            labels=[r'$\log N\,[\rm cm^{-3}]$',r'$b\,[\rm km s^{-1}]$',r'$z \times 1e5$'],
-            show_titles=True,title_kwargs={"fontsize": 16})
-        else:
-            self.samples[:,2] = self.samples[:,2] * 1e5  
-            fig = corner.corner(self.samples,bins=30,quantiles=(0.16,0.5, 0.84),
-            show_titles=True,title_kwargs={"fontsize": 16})
-
-        output_name = self.config_param.processed_product_path + '/corner_' + self.config_param.chain_short_fname + '.png'
-
-        pl.savefig(output_name,bbox_inches='tight')
-        pl.clf()
-
-        print('Written %s' % output_name)
 
     def write_model_spectrum(self):
         """
