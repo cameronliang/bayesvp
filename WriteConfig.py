@@ -10,7 +10,7 @@
 import numpy as np
 import os
 
-class write_config:
+class interactive_QnA:
     def interactive_var(self):
         self.spec_path    = raw_input('Path to spectrum:\n')
         self.spec_fname   = raw_input('Spectrum filename: ')
@@ -79,8 +79,7 @@ class write_config:
             self.mcmc_sampler = 'kombine'
 
 
-
-    def write_single_config(self):
+    def QnA(self):
 
         self.interactive_var()
 
@@ -106,5 +105,5 @@ class write_config:
 
 if __name__ == '__main__':
 
-    s = write_config()
-    s.write_single_config()
+    config = interactive_QnA()
+    config.QnA()
