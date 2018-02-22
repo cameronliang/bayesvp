@@ -35,7 +35,7 @@ class ProcessModel:
         self.n_params = config_param.n_params
 
         # MCMC chains
-        self.burnin = compute_burin_GR(config_param.chain_fname + '_GR.dat')
+        self.burnin = compute_burnin_GR(config_param.chain_fname + '_GR.dat')
         self.samples = mcmc_chain[self.burnin:, :, :].reshape((-1, self.n_params))
         
         # Best fit model parameters and spectrum flux
