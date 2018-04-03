@@ -90,3 +90,17 @@ Contributors:  Andrey Kravtsov
 
 License:       MIT. Copyright (c) 2017-2018
 
+
+
+    @ARTICLE{bayesvp,
+       author = {{Liang}, C. and {Kravtsov}, A. and {Agertz}, O.},
+        title = "{Observing the circumgalactic medium of simulated galaxies through     synthetic absorption spectra}",
+      journal = {ArXiv e-prints},
+    archivePrefix = "arXiv",
+       eprint = {1710.00411},
+     keywords = {Astrophysics - Astrophysics of Galaxies},
+         year = 2017,
+        month = oct,
+       adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171000411L},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    }
