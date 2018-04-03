@@ -91,8 +91,9 @@ Contributors:  Andrey Kravtsov
 License:       MIT. Copyright (c) 2017-2018
 
 
+If you use ``bayesvp``, please cite the paper: 
 
-    @ARTICLE{bayesvp,
+    @ARTICLE{Liang2017,
        author = {{Liang}, C. and {Kravtsov}, A. and {Agertz}, O.},
         title = "{Observing the circumgalactic medium of simulated galaxies through synthetic absorption spectra}",
       journal = {ArXiv e-prints},
@@ -104,3 +105,20 @@ License:       MIT. Copyright (c) 2017-2018
        adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171000411L},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
     }
+
+
+or you can cite this one: 
+
+    @ARTICLE{LiangKravtsov2017,
+       author = {{Liang}, C. and {Kravtsov}, A.},
+        title = "{BayesVP: a Bayesian Voigt profile fitting package}",
+      journal = {ArXiv e-prints},
+    archivePrefix = "arXiv",
+       eprint = {1710.09852},
+     keywords = {Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation     and Methods for Astrophysics},
+         year = 2017,
+        month = oct,
+       adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171009852L},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    }
+
