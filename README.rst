@@ -12,6 +12,8 @@ I recommend installing bayesvp with pip with the ``--user`` flag:
 
     pip install bayesvp --user
 
+This usually puts the executable scripts in ``~/.local/bin``. Make sure that this is in your PATH. 
+
 You can also install it system-wide and might need to add ``sudo`` in the beginning. 
 
 After installing ``bayesvp``, you should run its unit tests to ensure the package works as expected. The simplest way to do this is inside a python shell: 
