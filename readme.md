@@ -2,7 +2,7 @@
 bayesvp
 ========
 
-``bayesvp`` is a Bayesian MCMC Voigt profile fitting routine. ``bayesvp`` provides a number of helpful executable scripts that work with command line arguments (saved in your environment ``PATH``). The main functionality is, of course, the MCMC Voigt profile fitting (``bvpfit``), that user supplies a config file that specifies parameter priors, number of walkers, parallel threads, and etc. There are utility functions that allow users to quickly create an example config file, plot the chain, plot and process the best fit models.  You can find more details in the code paper, [Liang & Kravtsov 2017](http://adsabs.harvard.edu/abs/2017arXiv171009852L) or also related paper [Liang et al 2017](http://adsabs.harvard.edu/abs/2017arXiv171000411L)
+``bayesvp`` is a Bayesian MCMC Voigt profile fitting routine. ``bayesvp`` provides a number of helpful executable scripts that work with command line arguments (saved in your environment ``PATH``). The main functionality is, of course, the MCMC Voigt profile fitting (``bvpfit``), that user supplies a config file that specifies parameter priors, number of walkers, parallel threads, and etc. There are utility functions that allow users to quickly create an example config file, plot the chain, plot and process the best fit models.  You can find more details in the code paper, [Liang & Kravtsov 2017](http://adsabs.harvard.edu/abs/2017arXiv171009852L) or a related paper [Liang et al. 2017](http://adsabs.harvard.edu/abs/2017arXiv171000411L)
 
 
 Installation
