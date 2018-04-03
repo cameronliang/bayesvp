@@ -2,9 +2,6 @@
 # Compiled python modules
 *.pyc
 
-# tests files
-tests/*
-
 # Setuptools distribution folder.
 /dist/
 

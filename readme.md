@@ -16,6 +16,7 @@ Installation
 I recommend installing bayesvp with pip with the --user flag: 
 
 .. code:: shell
+
 	pip install bayesvp --user
 
 You can also install it system wide and might need to add ``sudo`` in the front. 
@@ -24,11 +25,13 @@ After installing bayesvp, you should run its unit tests to ensure the code works
 expected. Simplest way to do this is inside a python shell: 
 
 .. code:: shell
+
 	from bayesvp.tests import run_tests
 
 The output should look something like this: 
 
 .. code:: shell
+
 	test_config_file_exists (bayesvp.tests.test_config.TCConfigFile) ... ok
 	test_default_no_continuum_params (bayesvp.tests.test_config.TCConfigFile) ... ok
 	test_example_mcmc_params (bayesvp.tests.test_config.TCConfigFile) ... ok
@@ -47,24 +50,32 @@ If you encounter any error, please send output to the author.
 You can also run a full test example by executing: 
 
 .. code:: shell
+
 	bvpfit --test
 
 This will run a MCMC fit with the detault config file and test spectrum (./data/example). 
 After the fit is finished, to process the MCMC chain, you can type: 
 
 .. code:: shell
+
 	bvp_plot_model --test
+
+.. code:: shell
+
+	bvp_compute_pdf --test	
 
 You can create your own default config file and modify it to suit the needs of your 
 particular absorption line system. 
 
 .. code:: shell
+
 	bvp_write_config -a 
 
 These executables accept commandline arguments. For example, to get more info on the 
 usage of bvpfit, simply type: 
 
 .. code:: shell
+
 	bvpfit -h
 
 
