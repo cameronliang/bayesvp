@@ -94,7 +94,7 @@ License:       MIT. Copyright (c) 2017-2018
 
     @ARTICLE{bayesvp,
        author = {{Liang}, C. and {Kravtsov}, A. and {Agertz}, O.},
-        title = "{Observing the circumgalactic medium of simulated galaxies through     synthetic absorption spectra}",
+        title = "{Observing the circumgalactic medium of simulated galaxies through synthetic absorption spectra}",
       journal = {ArXiv e-prints},
     archivePrefix = "arXiv",
        eprint = {1710.00411},
