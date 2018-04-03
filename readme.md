@@ -115,7 +115,7 @@ or you can cite this one:
       journal = {ArXiv e-prints},
     archivePrefix = "arXiv",
        eprint = {1710.09852},
-     keywords = {Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation     and Methods for Astrophysics},
+     keywords = {Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation and Methods for Astrophysics},
          year = 2017,
         month = oct,
        adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171009852L},
