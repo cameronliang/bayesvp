@@ -1,2 +1,5 @@
 include README.rst
-include bayesvp/data/*
+include bayesvp/data/atom.dat
+include bayesvp/data/example/*
+include bayesvp/scripts/*.py
+include bayesvp/tests/*.py

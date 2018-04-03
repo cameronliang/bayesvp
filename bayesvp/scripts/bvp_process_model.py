@@ -52,31 +52,34 @@ class ProcessModel:
         for n in range(self.config_param.n_params):
             if n < self.config_param.n_params-self.config_param.cont_nparams:
                 if self.config_param.vp_params_type[n] == 'logN':
-                        logN_counter += 1
-                        temp_label = r'$\log N_{%s}/\rm{cm^{-2}}$' % str(logN_counter)
-                        self.plot_param_labels.append(temp_label)
-                        self.gr_param_label.append(r'$logN_{%s}$' % str(logN_counter))
-                        self.ascii_filename_label.append('logN_%s' % str(logN_counter))
+                    logN_counter += 1
+                    temp_label = r'$\log N_{%s}/\rm{cm^{-2}}$' % str(logN_counter)
+                    self.plot_param_labels.append(temp_label)
+                    self.gr_param_label.append(r'$logN_{%s}$' % str(logN_counter))
+                    self.ascii_filename_label.append('logN_%s' % str(logN_counter))
                 elif self.config_param.vp_params_type[n] == 'b':
-                        b_counter += 1
-                        temp_label = r'$b_{%s}/\rm{km s^{-1}}$' % str(b_counter)
-                        self.plot_param_labels.append(temp_label)
-                        self.gr_param_label.append(r'$b_{%s}$' % str(b_counter))
-                        self.ascii_filename_label.append('b_%s' % str(b_counter))
+                    b_counter += 1
+                    temp_label = r'$b_{%s}/\rm{km s^{-1}}$' % str(b_counter)
+                    self.plot_param_labels.append(temp_label)
+                    self.gr_param_label.append(r'$b_{%s}$' % str(b_counter))
+                    self.ascii_filename_label.append('b_%s' % str(b_counter))
                 elif self.config_param.vp_params_type[n] == 'z':
-                        z_counter += 1 
-                        temp_label = r'$z_{%s}/10^{-5}$' % str(z_counter)
-                        self.plot_param_labels.append(temp_label)
-                        self.gr_param_label.append(r'$z_{%s}$' % str(z_counter))
-                        self.ascii_filename_label.append('z_%s' % str(z_counter))
+                    z_counter += 1 
+                    temp_label = r'$z_{%s}/10^{-5}$' % str(z_counter)
+                    self.plot_param_labels.append(temp_label)
+                    self.gr_param_label.append(r'$z_{%s}$' % str(z_counter))
+                    self.ascii_filename_label.append('z_%s' % str(z_counter))
             else:
                 cont_param_counter += 1
-                temp_label = r'$a_{%s}$' % str(logN_counter)
+                temp_label = r'$a_{%s}$' % str(cont_param_counter)
                 self.plot_param_labels.append(temp_label)
+                self.ascii_filename_label.append(temp_label)
+                self.gr_param_label.append(temp_label)
 
         self.plot_param_labels   = np.array(self.plot_param_labels)
         self.gr_param_label = np.array(self.gr_param_label)
         self.ascii_filename_label = np.array(self.ascii_filename_label)
+
 
     def save_marginalized_pdf(self,n):
         """Plot and save the marginalized distribution of voigt profile parameters"""
@@ -100,7 +103,7 @@ class ProcessModel:
                 f.write('%.4f\t%.16f\n' % (x[i], log_pdf[i]))
         f.close()
 
-        #print('Written %s' % output_name_prefix + '.dat')
+        print('Written %s' % output_name_prefix + '.dat')
 
 
     def spline_binned_pdf(self,bins = 30, interp_kind = 'linear'):
@@ -127,7 +130,7 @@ class ProcessModel:
                 self.params_pdfs.append([x_tmp,log_pdf_tmp])
 
             elif 'b' in self.ascii_filename_label[n]:
-                new_bounds = [0.0,300.0]
+                new_bounds = [0.0,500.0]
                 x_tmp,log_pdf_tmp = extrapolate_pdf(x,f(x),new_bounds[0],new_bounds[1],
                                     bin_step_size)
                 self.params_pdfs.append([x_tmp,log_pdf_tmp])
@@ -138,7 +141,8 @@ class ProcessModel:
                                     bin_step_size)
                 self.params_pdfs.append([x_tmp,log_pdf_tmp])
 
-            self.save_marginalized_pdf(n)
+            if n < self.config_param.n_params-self.config_param.cont_nparams:
+                self.save_marginalized_pdf(n)
 
         self.params_pdfs = np.array(self.params_pdfs)
 
@@ -174,7 +178,7 @@ class ProcessModel:
                       + self.config_param.chain_short_fname + '.png')
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
-        #print('Written %s' % output_name)
+        print('Written %s' % output_name)
 
     def corner_plot(self,truths=None):
         """
@@ -198,7 +202,7 @@ class ProcessModel:
                 if self.truths:
                     self.truths[n] = self.truths[n] * 1e5
 
-        #plt.clf()
+
         plt.figure(1)
         fig = corner.corner(self.burned_in_samples,bins=30,quantiles=(0.16,0.5, 0.84),
             truths=self.truths,truth_color='g',use_math_text=True,labels=self.plot_param_labels,
@@ -210,7 +214,7 @@ class ProcessModel:
         plt.savefig(output_name,bbox_inches='tight')
         plt.clf()
 
-        #print('Written %s' % output_name)
+        print('Written %s' % output_name)
 
     def plot_gr_indicator(self):
         """
@@ -223,7 +227,6 @@ class ProcessModel:
         
         plt.figure(1,figsize=(6,6))
         for i in xrange(len(grs)):
-            #plt.plot(steps,grs[i],lw=1.5,label=str(i))
             plt.plot(steps,grs[i],lw=1.5,label=self.gr_param_label[i])
             
         plt.legend(loc='best')
@@ -237,7 +240,7 @@ class ProcessModel:
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
 
-        #print('Written %s' % output_name)
+        print('Written %s' % output_name)
 
 
     def write_model_spectrum(self):
@@ -252,7 +255,7 @@ class ProcessModel:
                                       self.config_param.flux, 
                                       self.config_param.dflux,
                                       self.model_flux],header='wave\tflux\terror\tmodel\n')
-        #print('Written %s' % output_fname)
+        print('Written %s' % output_fname)
         
     def write_model_summary(self):
         """

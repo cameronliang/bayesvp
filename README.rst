@@ -56,7 +56,7 @@ usage of bvpfit, simply type:
 
 
 Required libraries:
-------------
+--------------------
 
 1) numpy, scipy, matplotlib and pyfits. 
 
@@ -67,7 +67,7 @@ Required libraries:
 4) [Corner plot](https://corner.readthedocs.io/en/latest/)
 
 Notes/Tips/Cautions:
-------------
+--------------------
 
 1. For placing constraints for upper limits, one should not initialize walkers too far away from 'reasonable' parameters(e.g., column density or redshift if you know it from somewhere else). For example, if one knows logN= 15 is clearly too large given the data, then walkers should be initialized such that they do not waste time to get back to smaller logN and/or get stuck at larger logN. 
 
