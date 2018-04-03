@@ -1,0 +1,8 @@
+spec_path test_path_to_spec
+output o6
+mcmc 100 200 4 bic kombine
+%% OVI.spec 1030.000000 1033.000000
+% O VI 15 30 0.000000
+logN 10.00 18.00
+b    0.00 100.00
+z    0.000000 300.00

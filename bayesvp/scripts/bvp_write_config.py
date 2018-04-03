@@ -1,16 +1,41 @@
 ################################################################################
 #
-# write_config.py 		(c) Cameron Liang 
+# write_bvp_config.py 	(c) Cameron Liang 
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
+#
 # Interactive script to aid writing a config file for voigt profile fitting. 
 #
 ################################################################################
 
-import numpy as np
 import os
+import sys
+import numpy as np
+from bayesvp.utilities import MyParser
 
-class interactive_QnA:
+class WriteBayesVPConfig:
+
+    def __init__(self):
+        self.spec_path    = 'test_path_to_spec'
+        self.spec_fname   = 'OVI.spec'
+        self.output_chain_fname = 'o6'
+        self.atom         = 'O'
+        self.state        = 'VI'
+        self.auto         = 1
+        self.wave_start   = 1030.0
+        self.wave_end     = 1033.0
+
+        self.nwalkers     = 100
+        self.nsteps       = 200
+        self.nthreads     = 4
+
+        self.min_logN = 10.0;       self.max_logN       = 18
+        self.min_b    = 0;          self.max_b          = 100
+        self.central_redshift = 0.; self.velocity_range = 300
+
+        self.model_selection = 'bic'
+        self.mcmc_sampler    = 'kombine'
+
     def interactive_var(self):
         self.spec_path    = raw_input('Path to spectrum:\n')
         self.spec_fname   = raw_input('Spectrum filename: ')
@@ -42,7 +67,7 @@ class interactive_QnA:
         try:
             self.max_b = float(raw_input('max b = '))
         except ValueError:
-            self.max_b = 200
+            self.max_b = 100
 
         try:
             self.central_redshift = float(raw_input('central redshift = '))
@@ -52,23 +77,23 @@ class interactive_QnA:
         try:
             self.velocity_range   = float(raw_input('velocity range [km/s] = '))
         except ValueError:
-            self.velocity_range = 500
+            self.velocity_range = 300
 
         print('\nNow enter the MCMC parameters..')
         try:
             self.nwalkers = int(raw_input('Number of walkers: '))
         except ValueError:
-            self.nwalkers = 200
+            self.nwalkers = 100
         
         try:
             self.nsteps   = int(raw_input('Number of steps:  '))
         except ValueError:
-            self.nsteps = 1000
+            self.nsteps = 200
 
         try:
             self.nthreads = int(raw_input('Number of processes: '))
         except ValueError:
-            self.nthreads = 2
+            self.nthreads = 4
 
         self.model_selection = raw_input('Model selection method bic(default),aic,bf: ')
         if self.model_selection == '':
@@ -79,11 +104,17 @@ class interactive_QnA:
             self.mcmc_sampler = 'kombine'
 
 
-    def QnA(self):
+    def print_to_file(self,interactive_write=False):
 
-        self.interactive_var()
+        if interactive_write:
+            self.interactive_var()
 
-        self.config_path = self.spec_path + '/bvp_configs'
+        if self.spec_path == 'test_path_to_spec':
+            self.config_path = './bvp_configs'
+
+        else:
+            self.config_path = self.spec_path + '/bvp_configs'
+
         if not os.path.isdir(self.config_path):
             os.mkdir(self.config_path)
 
@@ -105,7 +136,29 @@ class interactive_QnA:
 
         print('Written config file: %s\n' % self.config_fname)
 
-if __name__ == '__main__':
 
-    config = interactive_QnA()
-    config.QnA()
+def main():
+
+    config_writer = WriteBayesVPConfig()
+
+    parser = MyParser()
+    parser.add_argument("-a", "--auto",help="write default config file",
+                        action="store_true")
+    parser.add_argument("-i", "--interactive",help="write config file based on user input",
+                        action="store_true")
+    
+    args = parser.parse_args()
+
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    
+    if args.auto:
+        config_writer.print_to_file()
+
+    if args.interactive:
+        config_writer.print_to_file(args.interactive)
+
+
+if __name__ == '__main__':
+    sys.exit(main() or 0)

@@ -55,6 +55,9 @@ After the fit is finished, to process the MCMC chain, you can type:
 .. code:: shell
 	bvp_plot_model --test
 
+.. code:: shell
+	bvp_compute_pdf --test	
+
 You can create your own default config file and modify it to suit the needs of your 
 particular absorption line system. 
 

@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Utilities.py 		(c) Cameron Liang 
+# utilities.py 		(c) Cameron Liang 
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
@@ -10,9 +10,10 @@
 import numpy as np
 import re
 import os
-from sklearn.neighbors import KernelDensity
+import sys
+import argparse
 from scipy.special import gamma
-from sklearn.neighbors import BallTree
+
 
 ###############################################################################
 # Model Comparisons: Bayesian Evidence / BIC / AIC  
@@ -28,9 +29,10 @@ def determine_autovp(config_fname):
 	def replicate_config(config_fname,normal_lines, 
 						component_line,n_component):
 
-		# Assume file extension has .dat or .txt 
-		new_config_fname = (config_fname[:-4] + str(n_component)
-							 + config_fname[-4:])
+		basename_with_path, config_extension = os.path.splitext(config_fname)
+		new_config_fname = (basename_with_path + str(n_component)
+							 + config_extension)
+
 		f = open(new_config_fname,'w')
 		for line in normal_lines:
 			temp_line = line.split(' ')
@@ -38,7 +40,7 @@ def determine_autovp(config_fname):
 			# Add the number of component at the end of output chain filename
 			if 'output' in temp_line or 'chain' in temp_line:
 				output_name = temp_line[1] + str(n_component)
-				f.write(temp_line[0] + ' '); f.write(output_name);
+				f.write(temp_line[0] + ' '); f.write(output_name)
 				f.write('\n')
 			else:
 				f.write(line); f.write('\n')
@@ -116,13 +118,14 @@ def model_info_criterion(obs_spec_obj):
 	
 		else:
 			print('model_selection is not defined to either be aic or bic')
-			exit()
+			sys.exit()
 
 def estimate_bayes_factor(traces, logp, r=0.05):
 	"""
 	Esitmate Odds ratios in a random subsample of the chains in MCMC
 	AstroML (see Eqn 5.127, pg 237)
 	"""
+	from sklearn.neighbors import BallTree
 	
 	ndim, nsteps = traces.shape # [ndim,number of steps in chain]
 
@@ -194,6 +197,8 @@ def bic_gaussian_kernel(chain_fname,data_length):
 
 	# Note that bandwidth of kernel is set to 1 universally
 	"""
+	from sklearn.neighbors import KernelDensity
+
 	chain = np.load(chain_fname + '.npy')
 	n_params = np.shape(chain)[-1]
 	samples = chain.reshape((-1,n_params))
@@ -251,6 +256,51 @@ def write_mcmc_stats(config_params_obj,output_fname):
 	print('Written %s' % output_fname)
 
 	return
+
+def extrapolate_pdf(x,pdf,left_boundary_x,right_boundary_x,x_stepsize,slope=10):
+    """ 
+    Extrapolate the log10(pdf) outside the range of (min_x,max_x) with 
+    some logarithmic slope 
+    """
+
+    log_pdf = np.log10(pdf)
+    min_x = min(x); max_x = max(x)
+    #x_stepsize = np.median(x[1:]-x[:-1])
+
+    entered_left_condition = False
+    if min_x >= left_boundary_x:
+
+        # equation of a line with +10 slope going down to the left.
+        left_added_x = np.arange(left_boundary_x,min_x,x_stepsize) 
+        m = slope; b = log_pdf[0] - m*min_x
+        left_pdf = m*left_added_x + b 
+    
+        # Combine the two segments    
+        new_x = np.concatenate((left_added_x,x))
+        log_pdf = np.concatenate((left_pdf,log_pdf))
+        
+        entered_left_condition = True
+    
+    if max_x <= right_boundary_x:
+        
+        # Equation of a line with -10 slope going down to the right.
+        right_added_x = np.arange(max_x,right_boundary_x,x_stepsize)
+        m = -slope; b = log_pdf[-1] - m*max_x
+        right_pdf = m*right_added_x + b
+        
+        # In case new_x is not defined yet if not entered previous condition
+        if entered_left_condition:
+            new_x = np.concatenate((new_x,right_added_x))
+        else:
+            new_x = np.concatenate((x,right_added_x))
+        log_pdf = np.concatenate((log_pdf,right_pdf))        
+
+    # Normalize the pdf
+	pdf_tmp  = 10**log_pdf/np.sum((10**log_pdf)*(x_stepsize))
+	inds = np.where(pdf_tmp<=0)[0]; pdf_tmp[inds] = np.min(pdf_tmp)
+    log_pdf = np.log10(pdf_tmp)
+    return new_x, log_pdf
+
 
 
 ###############################################################################
@@ -314,7 +364,7 @@ def gr_indicator(chain):
         
 	return Rgrs 
 
-def compute_burnin_GR(gr_fname,gr_threshold=1.01):
+def compute_burnin_GR(gr_fname,gr_threshold=1.005):
 	"""
 	Calculate the steps where the chains are 
 	converged given a Gelman-Rubin (GR) threshod. 
@@ -349,10 +399,7 @@ def straight_line(x,m,b):
 
 def linear_continuum(wave,flux,m,b):
 	continuum = straight_line(wave,m,b)
-	newflux = flux * continuum
-	return newflux
-	#new_flux = flux * straight_line(wave - np.mean(wave),m,b)
-	#return new_flux
+	return flux * continuum
 
 def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 	"""
@@ -401,6 +448,72 @@ def printline():
 	print("---------------------------------------------------------------------")
 
 
-def getCodeDir():
-
+def get_bayesvp_Dir():
 	return os.path.dirname(os.path.realpath(__file__))
+
+
+class MyParser(argparse.ArgumentParser):
+	def error(self, message):
+		sys.stderr.write('error: %s\n' % message)
+		self.print_help()
+		sys.exit(2)
+
+def print_config_help():
+    
+	printline()
+	printline()
+	print('Example of config file content:')
+	printline()
+	print('spec_path test_path_to_spec')
+	print('output o6')
+	print('mcmc 100 200 4 bic kombine')
+	print('%% OVI.spec 1030.000000 1033.000000')
+	print('% O VI 15 30 0.000000')
+	print('logN 10.00 18.00')
+	print('b    0.00 100.00')
+	print('z    0.000000 300.00')
+	printline()
+	printline()
+	print('\n')
+
+	printline()
+	printline()
+	print('Structure of a line in config file: ')
+	print('parameter_type parameter(s)')
+	printline()
+	print('spec_path full_path_to_spectrum')
+	print('output mcmc_chain_filename')
+	print('mcmc walkers steps_per_walker parallel_threads MCMC_evidence_criterion MCMC_sampler')
+	print('%% spectrum_file_name wave_begin1 wave_end1 wave_begin2 wave_end2 ...')
+	print('% Atom State logN_guess b_guess z_guess')
+	print('logN min_logN max_logN')
+	print('b    min_b max_b')
+	print('z    center_z dv_range')
+	printline()
+	printline()
+
+	print('\n')
+
+	printline()
+	printline()
+	print('optional lines/commands:')
+
+	printline()
+	print('lsf lsf_file_name\n')
+	print('where lsf = line spread function to be convolved with model')
+	print('lsf_file_name is assumed to be in spec_path/database')
+
+	printline()
+	print('continuum n \n')
+	print('where n = polynomial degree; number of parameter = n+1')
+
+
+
+
+	printline()
+	print('! auto n\n')
+	print('Automatically try up to n number of Voigt profile component')
+
+	printline()
+	print('# lines begin with # is an optional comment')
+	printline()

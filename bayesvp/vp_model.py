@@ -1,10 +1,10 @@
 ################################################################################
 #
-# Model.py   		(c) Cameron Liang 
+# vp_model.py   	    (c) Cameron Liang 
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
-# Voigt profile model; Produce prediction of model given the config file   
+# Voigt profile model; produce prediction of model given the config file   
 # (specifically the initial parameters). It can be imported to produce 
 # a voigt profile on demand specified by user as well. 
 ################################################################################
@@ -14,7 +14,7 @@ from scipy.special import wofz
 import sys
 import os
 
-from Utilities import convolve_lsf,get_transitions_params
+from bayesvp.utilities import convolve_lsf,get_transitions_params
 
 # constants [cgs units]
 h  = 6.6260755e-27   # planck constant
@@ -31,16 +31,16 @@ km_cm = 1.e5   # Convert km to cm
 ang_cm = 1.e-8 # Convert Angstrom to cm
 kpc_cm = 3.0856e21 # Convert kpc to cm 
 
-def WavelengthArray(wave_start, wave_end, dv):
+def wavelength_array(wave_start, wave_end, dv):
     """
     Create Wavelength array with resolution dv
     
     Parameters:
     ----------
     wave_start: float
-        starting wavelength of array [\AA]
+        starting wavelength of array [A]
     wave_end: float
-        ending wavelength of array [\AA]
+        ending wavelength of array [A]
     dv: float
         resolution element [km/s]
     
@@ -53,13 +53,14 @@ def WavelengthArray(wave_start, wave_end, dv):
     wave_start = float(wave_start); wave_end = float(wave_end)
 
     # Calcualte Total number of pixel given the resultion and bounds of spectrum
-    total_number_pixel = np.int(np.log10(wave_end/wave_start) / np.log10(1 + dv/c) + 0.5)
+    total_number_pixel = np.int(np.log10(wave_end/wave_start) / 
+                                np.log10(1 + dv/c) + 0.5)
     array_index        = np.arange(0,total_number_pixel,1)
     
     # Return wavelength array
     return wave_start * ((1 + dv/c)**array_index)
 
-def voigt(x, a):
+def voigt_shape(x, a):
     """
     Real part of Faddeeva function, where    
     w(z) = exp(-z^2) erfc(jz)
@@ -67,7 +68,7 @@ def voigt(x, a):
     z = x + 1j*a
     return wofz(z).real
 
-def Voigt(b, z, nu, nu0, Gamma):
+def voigt_profile_line(b, z, nu, nu0, Gamma):
     """
     Generate Voigt Profile for a given transition
 
@@ -97,9 +98,9 @@ def Voigt(b, z, nu, nu0, Gamma):
     x = delta_nu/delta_nuD
     a = Gamma/(4*np.pi*delta_nuD)
 
-    return prefactor * voigt(x,a)  
+    return prefactor * voigt_shape(x,a)  
 
-def bParameter(logT, b_nt, mass):
+def b_parameter(logT, b_nt, mass):
     """
     Combined thermal and non-thermal velocity
 
@@ -122,7 +123,7 @@ def bParameter(logT, b_nt, mass):
     return np.sqrt(b_thermal**2 + b_nt**2)
 
 
-def General_Intensity(logN, b, z, wave, atomic_params):
+def general_intensity(logN, b, z, wave, atomic_params):
     """
     Takes a general combination of atomic 
     parameters, without specifying the name of the transition 
@@ -139,7 +140,7 @@ def General_Intensity(logN, b, z, wave, atomic_params):
     wave: 1D array
         observed wavelength array
     atomic_params: array
-        array of oscillator strength, rest frame wavelength [\AA], damping coefficient, mass [grams] of the transition
+        array of oscillator strength, rest frame wavelength [A], damping coefficient, mass [grams] of the transition
 
     Returns:
     ----------
@@ -156,7 +157,7 @@ def General_Intensity(logN, b, z, wave, atomic_params):
     nu      = c/(wave*ang_cm) # Frequency array 
 
     # Compute Optical depth
-    tau = N*sigma0*f*Voigt(b,z,nu,nu0,gamma)
+    tau = N*sigma0*f*voigt_profile_line(b,z,nu,nu0,gamma)
 
     # Return Normalized intensity
     return np.exp(-tau.astype(np.float))
@@ -194,7 +195,7 @@ def simple_spec(logN, b, z, wave, atom=None, state=None, lsf=1):
     spec = []
     for l in xrange(n_transitions):
         if not np.isnan(atomic_params[l]).any():
-            model_flux = General_Intensity(logN,b,z,wave,atomic_params[l]) 
+            model_flux = general_intensity(logN,b,z,wave,atomic_params[l]) 
             spec.append(convolve_lsf(model_flux,lsf)) 
         else:
             return np.ones(wave)
@@ -205,7 +206,7 @@ def generic_prediction(alpha, obs_spec_obj):
     """
     This is a model flux produced by a generic combination 
     of the voigt profile parameters by arbitrary combination
-    of fixing/tieing/freeing any parameters; see Config.py
+    of fixing/tieing/freeing any parameters; see config.py
 
     Parameters:
     ----------
@@ -215,7 +216,7 @@ def generic_prediction(alpha, obs_spec_obj):
         config file  
     obs_spec_obj:
         Paramters object defined by the config file
-        see ./Config.py
+        see ./config.py
     
     Returns:
     ----------
@@ -247,7 +248,7 @@ def generic_prediction(alpha, obs_spec_obj):
             n_transitions = len(obs_spec_obj.transitions_params_array[i][k])
             for l in xrange(n_transitions):
                 if not np.isnan(obs_spec_obj.transitions_params_array[i][k][l]).any():
-                    model_flux = General_Intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])
+                    model_flux = general_intensity(temp_alpha[0],temp_alpha[1],temp_alpha[2],obs_spec_obj.wave,obs_spec_obj.transitions_params_array[i][k][l])
 
                     # Convolve (potentially )LSF for each region 
                     spec.append(convolve_lsf(model_flux,obs_spec_obj.lsf[k])) 
@@ -266,47 +267,10 @@ def continuum_model_flux(alpha,obs_spec_obj):
     """
     
     if obs_spec_obj.cont_normalize:
-        num_boundary = obs_spec_obj.cont_nparams; 
+        num_boundary = obs_spec_obj.cont_nparams
         model_flux = generic_prediction(alpha[:-num_boundary],obs_spec_obj)
         local_continuum = poly_continuum(obs_spec_obj.wave,obs_spec_obj.flux,*alpha[-num_boundary:])
         return model_flux * local_continuum
     else:
         model_flux = generic_prediction(alpha,obs_spec_obj)
         return model_flux
-
-def continuum_test():
-
-    import matplotlib.pyplot as plt
-    import sys
-    from Config import DefineParams
-    config_fname = sys.argv[1]
-    obs_spec = DefineParams(config_fname)    
-    obs_spec.print_config_params()
-
-    a0 = 0.1
-    a1 = 0.2
-    a2 = 0.3
-    alpha = np.array([14,50,0.0,a0,a1,a2])
-    model_flux = continuum_model_flux(alpha,obs_spec)
-    x = ((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave) # 
-    #pl.step(x,model_flux,'k')
-    v = cm_km*c*((obs_spec.wave-np.median(obs_spec.wave))/obs_spec.wave)
-    plt.step(v,model_flux,'b')
-    plt.step(v,obs_spec.flux,'k')
-    plt.savefig('./temp.png')
-
-def produce_simplespec(wave_begin,wave_end,dv,logN,b,z):
-
-    import matplotlib.pyplot as plt
-    wave = WavelengthArray(wave_begin,wave_end,dv)
-
-    flux = simple_spec(logN,b,z,wave,'H','I')
-
-    plt.step(wave,flux)
-    plt.xlim([1214,1218])
-    plt.ylim([0,1.3])
-    plt.savefig('./temp.png')
-
-if __name__ == '__main__':
-
-    produce_simplespec(1214,1218,2.0,14.,30,0.0)

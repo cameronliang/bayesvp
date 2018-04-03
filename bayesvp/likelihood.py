@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Likelihood.py 		(c) Cameron Liang 
+# likelihood.py 		(c) Cameron Liang 
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
@@ -10,7 +10,7 @@
 
 import numpy as np
 
-from Model import generic_prediction,continuum_model_flux
+from bayesvp.vp_model import continuum_model_flux
 
 np.seterr(all='ignore') # Ignore floating point warnings.
 
@@ -26,7 +26,7 @@ class Posterior(object):
 
     Parameters:
     ----------- 
-    obs_spec: 
+    config_params: 
         Parameters object defined by the config file
     
     Returns:
@@ -35,8 +35,8 @@ class Posterior(object):
         The posterior distribution as a function of the 
         input parameters given the spectral data
     """
-    def __init__(self,obs_spec):
-        self.obs_spec = obs_spec
+    def __init__(self,config_params):
+        self.config_params = config_params
 
     def lnlike(self,alpha):
         """
@@ -49,14 +49,13 @@ class Posterior(object):
         """
 
         # Flux of the model
-        model_flux = continuum_model_flux(alpha,self.obs_spec)
-        #model_flux = generic_prediction(alpha,self.obs_spec)
+        model_flux = continuum_model_flux(alpha,self.config_params)
         
-        resid = self.obs_spec.flux - model_flux
+        resid = self.config_params.flux - model_flux
 
         # Natural log of gaussian likelihood with normalization included 
-        ln_likelihood = np.sum(0.5*np.log(2*np.pi*self.obs_spec.dflux**2)
-                              -0.5*resid**2/self.obs_spec.dflux**2)
+        ln_likelihood = np.sum(0.5*np.log(2*np.pi*self.config_params.dflux**2)
+                              -0.5*resid**2/self.config_params.dflux**2)
 
         if np.isnan(ln_likelihood):
             return -np.inf
@@ -73,14 +72,14 @@ class Posterior(object):
         """
         
         # Define these for clarity
-        min_logN,max_logN = self.obs_spec.priors[0] 
-        min_b,max_b       = self.obs_spec.priors[1]
-        min_z,max_z       = self.obs_spec.priors[2]
+        min_logN,max_logN = self.config_params.priors[0] 
+        min_b,max_b       = self.config_params.priors[1]
+        min_z,max_z       = self.config_params.priors[2]
 
         # Select the parameters that are free or tie (i.e not fixed)
-        final_vp_params_type = self.obs_spec.vp_params_type[~np.isnan(self.obs_spec.vp_params_flags)]
+        final_vp_params_type = self.config_params.vp_params_type[~np.isnan(self.config_params.vp_params_flags)]
 
-        sum_logN_prior = 0; sum_b_prior = 0; sum_z_prior = 0;
+        sum_logN_prior = 0; sum_b_prior = 0; sum_z_prior = 0
 
         model_redshifts = []
         
@@ -98,11 +97,11 @@ class Posterior(object):
         if not all(sorted(model_redshifts) == model_redshifts):
             sum_z_prior = -np.inf 
 
-        if self.obs_spec.cont_normalize:
+        if self.config_params.cont_normalize:
             # linear continuum slope and intercept priors
             contiuum_prior = 0
 
-            for i in range(1,self.obs_spec.cont_nparams+1):
+            for i in range(1,self.config_params.cont_nparams+1):
                 contiuum_prior += tophat_prior(alpha[-i],-1,1)
 
             return sum_logN_prior + sum_b_prior + sum_z_prior + contiuum_prior

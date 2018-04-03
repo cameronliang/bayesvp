@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Config.py 		(c) Cameron Liang 
+# config.py 		(c) Cameron Liang 
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
@@ -11,8 +11,10 @@
 import numpy as np
 import os
 import re 
+import sys
+import ntpath
 
-from Utilities import get_transitions_params,printline
+from bayesvp.utilities import get_transitions_params, MyParser
 
 
 class DefineParams:
@@ -22,31 +24,49 @@ class DefineParams:
 
     Attributes:
     -----------
-    lines, spec_path, chain_short_fname, 
-    chain_fname, mcmc_outputpath: str
-        Files I/O
-    nwalkers, nsteps, nthreads: int    
-        MCMC parameters
-    wave,flux,error: array
+    lines: array_like
+        All lines containing in config file
+    spec_path: str
+        Full path to the spectrum file 
+    chain_short_fname: str
+        Name of the output mcmc chain (with .npy extension)
+    self_bvp_test: str
+        Determines if it is a test run
+    chain_fname: str
+    output_path: str
+    mcmc_outputpath: str
+    data_product_path: str
+    data_product_path_files: str
+    data_product_path_plots: str
+    nwalkers: int
+    nsteps: int
+    nthreads: int
+    wave: array
         Selected region of the input spectral data
-    wave_begins, wave_ends: array_like
+    flux: array
+    error: array
+    wave_begins: array_like
         Selected wavelength regions bounds
-    vp_params, transitions_params_array, vp_params_type,vp_params_type:array_like
-        Model auxilary parameters/controls 
+    wave_ends: array_like
+        Selected wavelength regions bounds
+    vp_params: array_like
+    transitions_params_array: array_like
+    vp_params_type: array_like
+        Voigt profile model parameter types, i.e [logN, b, z]
+    vp_params_flags: array_like
+        indexed flags that indicate the parameter type
     n_component: int
         Number of Components defined by the model
     lsf: array_like
         Line spread function to be convolved with the model
     priors: array_like; shape = (3,2)
         Priors for three types of parameters (logN, b, z)
-
     """
 
     def __init__(self,config_fname):
+
         self.config_fname = config_fname
-        printline()
-        print('Config file: %s' % config_fname)
-        
+        self.config_basename = ntpath.basename(config_fname)
         # Read and filter empty lines
         all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
 
@@ -56,7 +76,7 @@ class DefineParams:
             if not line.startswith('#') and not line.startswith('!'): 
                 self.lines.append(line)    
 
-        
+
         ########################################################################
         # Retrieve MCMC parameters from config file
         # --------
@@ -67,13 +87,17 @@ class DefineParams:
         # continuum model preset to false
         self.cont_normalize  = False; self.cont_nparams = 0
 
+        self.self_bvp_test = False
+
         # Paths and fname strings
         for line in self.lines:
             line = filter(None,line.split(' '))
 
             if 'spec_path' in line or 'input' in line or 'spectrum' in line:
                 if line[1] == 'test_path_to_spec':
-                    self.spec_path = os.path.dirname(os.path.abspath(__file__)) + '/tests/'
+                    self.spec_path = (os.path.dirname(os.path.abspath(__file__)) + 
+                                     '/data/example')
+                    self.self_bvp_test = True
                 else:
                     self.spec_path = line[1]
 
@@ -118,17 +142,15 @@ class DefineParams:
 
         # Select spectral range to fit
         if len(spec_data_array[2:]) % 2 != 0:
-            print('There is an odd number of wavelengths entered in config file.')
-            print('Exiting program...')
-            exit()
+            sys.exit('There is an odd number of wavelengths entered in config file.\n Exiting program...')
         else:
             self.wave_begins = np.array(spec_data_array[2:][0::2]).astype(float)
             self.wave_ends   = np.array(spec_data_array[2:][1::2]).astype(float)
 
             for i in xrange(len(self.wave_begins)):
                 if self.wave_begins[i] >= self.wave_ends[i]:
-                    print('Starting wavelength cannot be greater or equal to ending wavelength: (%.3f, %.3f); exiting program...' % (self.wave_begins[i] ,self.wave_ends[i]))
-                    exit()
+                    sys.exit('Starting wavelength cannot be greater or equal to ending wavelength: (%.3f, %.3f); exiting program...' 
+                            % (self.wave_begins[i] ,self.wave_ends[i]))
 
         wave,flux,dflux = np.loadtxt(self.spec_fname,
                                     unpack=True,usecols=[0,1,2])
@@ -147,12 +169,13 @@ class DefineParams:
         self.wave = wave[inds]; self.flux = flux[inds]; self.dflux = dflux[inds]
 
         # Set negative pixels in flux and error 
-        inds = np.where((self.flux < 0)); self.flux[inds] = 0; 
-        inds = np.where((self.dflux < 0)); self.dflux[inds] = 0;
+        inds = np.where((self.flux < 0)); self.flux[inds] = 0
+        inds = np.where((self.dflux < 0)); self.dflux[inds] = 0
 
         if len(self.wave) == 0 or len(self.flux) == 0 or len(self.dflux) == 0:
-            print('No data within specified wavelength range. Please check config file and spectrum.')
-            exit()
+            raise SystemExit('No data within specified wavelength range.' \
+                             'Please check config file and spectrum.')
+            
 
         ########################################################################
         # Get Voigt profile parameters of arbitary number of components
@@ -184,8 +207,8 @@ class DefineParams:
             line = filter(None,line.split(' '))
 
             atom  = line[1]; state = line[2] # To obtain transition data
-            logNs.append(line[3]); 
-            bs.append(line[4]);
+            logNs.append(line[3])
+            bs.append(line[4])
             redshifts.append(line[5])
 
             if line[5][-1].isalpha():
@@ -203,12 +226,14 @@ class DefineParams:
         
         # Shape = (n_component,n_regions,n_transitions,4) 
         self.transitions_params_array = np.array(transitions_params_array)
-        self.vp_params = np.array([logNs,bs,redshifts]).T
+        self.vp_params = np.transpose(np.array([logNs,bs,redshifts]))
         self.n_component = len(component_lines) 
-
 
         # Define what kind of parameters to get walker initiazation ranges.
         # and for fixing and freeing paramters. 
+        
+        # Note that this assumed the pattern of parameters. 
+        # will update for continuum parameters. 
         vp_params_type = [None]*len(self.vp_params.flatten())
         vp_params_type[::3]  = ['logN'] * (len(vp_params_type[::3]))
         vp_params_type[1::3] = ['b']    * (len(vp_params_type[1::3]))
@@ -217,7 +242,6 @@ class DefineParams:
 
         flat_params = self.vp_params.flatten()
         flags = np.zeros(len(flat_params))
-        free_params = np.zeros(len(flat_params))
 
         letters = [None]*len(flat_params)
         for i in xrange(len(flat_params)):
@@ -249,26 +273,46 @@ class DefineParams:
             self.n_params = self.n_params + self.cont_nparams
 
         # Make directories for data products
-        self.mcmc_outputpath = self.spec_path+'/bvp_chains_' + str(self.redshift)
-        if not os.path.isdir(self.mcmc_outputpath):
-		    os.mkdir(self.mcmc_outputpath)
+        if self.self_bvp_test:
+            # write to local direcotry if it is test to avoid permission issues in bayesvp library location
+            self.output_path = '.' + '/bvp_output_z' + str(self.redshift)
+
+        else:
+            self.output_path = self.spec_path + '/bvp_output_z' + str(self.redshift)
+
+        self.mcmc_outputpath = self.output_path + '/chains'
+        
+        self.data_product_path = self.output_path +'/data_products'
+        self.data_product_path_files = self.data_product_path + '/ascii'
+        self.data_product_path_plots = self.data_product_path + '/plots'
         self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
 
-        self.processed_product_path = self.spec_path+'/processed_products_' + str(self.redshift)
-        if not os.path.isdir(self.processed_product_path):
-		    os.mkdir(self.processed_product_path)
+        try: 
+            os.makedirs(self.mcmc_outputpath)
+        except OSError:
+            if not os.path.isdir(self.mcmc_outputpath):
+                raise
 
+        try: 
+            os.makedirs(self.data_product_path_files)
+        except OSError:
+            if not os.path.isdir(self.data_product_path_files):
+                raise
 
+        try: 
+            os.makedirs(self.data_product_path_plots)
+        except OSError:
+            if not os.path.isdir(self.data_product_path_plots):
+                raise
 
-        """
         ########################################################################
-        Determine the LSF by specifying LSF filename with 
-        'database' directory under self.spec_path.    
-        Assumes LSF file contains only 1 column of data
-        -----------
-        lsf 
+        # Determine the LSF by specifying LSF filename with 
+        # 'database' directory under self.spec_path.    
+        # Assumes LSF file contains only 1 column of data
+        # -----------
+        # lsf 
         ########################################################################
-        """
+
         # Check if LSF is specified in config file
         defined_lsf = False
         for line in self.lines:
@@ -277,8 +321,7 @@ class DefineParams:
                 defined_lsf = True
                 if not os.path.isdir(self.spec_path + '/database'):
                     os.mkdir(self.spec_path + '/database')
-                    print('Require LSF file to be in %s' % self.spec_path + '/database')
-                    exit()
+                    sys.exit('Require LSF file to be in %s' % self.spec_path + '/database\n Exiting program...')
                 break
 
         # Get the LSF function from directory 'database'
@@ -295,8 +338,7 @@ class DefineParams:
                     fname = self.spec_path + '/database/' + lsf_fname
                     self.lsf = np.loadtxt(fname)
             else:
-                print('Please check if number of LSF mataches wavelength regions; exiting..')
-                exit()
+                sys.exit('Please check if number of LSF matches wavelength regions. Exiting program...')
         else:
             # Convolve with LSF = 1
             self.lsf = np.ones(len(self.wave_begins))
@@ -319,9 +361,15 @@ class DefineParams:
             line = np.array(line.split(' '))
             line = filter(None,line)
             if 'logN' in line:
+                if len(line) != 3:
+                    sys.exit('Error! In config file, format for logN prior:\n logN min_logN max_logN\nExiting program...')
                 self.priors[0] = [float(line[1]),float(line[2])]
+
             if 'b' in line:
+                if len(line) != 3:
+                    sys.exit('Error! In config file, format for b prior:\n z min_b max_b\nExiting program...')
                 self.priors[1] = [float(line[1]),float(line[2])]
+
             if 'z' in line:
                 c = 299792.458 # speed of light [km/s]
                 if len(line) == 4:
@@ -333,55 +381,78 @@ class DefineParams:
                     center_z,dv = float(line[1]),float(line[2])
                     min_z,max_z = center_z-dv/c,center_z+dv/c
                 else:
-                    print('In config, format for z:')
-                    print('z center_z |min_dv| |max_dv|')
-                    exit()
+                    sys.exit('Error! In config file, format for z prior:\n z center_z |min_dv| |max_dv|\nor\n' + 
+                            ' z center_z dv\nThe latter option will use +/- dv [km/s]')
                 self.priors[2] = [min_z,max_z]
     
     def print_config_params(self):
-        printline()
-        print('Config file: %s'     % self.config_fname)
-        print('Spectrum Path: %s'     % self.spec_path)
-        print('Spectrum name: %s'     % self.spec_short_fname)
+
+        # First copy the original config file to output path
+        with open(self.output_path + '/' + self.config_basename,'w') as f_config:
+            f_config.writelines('\n'.join(self.lines))
+
+        f_logging = open(self.output_path + '/config.log','w')
+
+        f_logging.write('Config file: %s\n'     % self.config_fname)
+        f_logging.write('Spectrum Path: %s\n'     % self.spec_path)
+        f_logging.write('Spectrum name: %s\n'     % self.spec_short_fname)
         
-        print('Fitting %i components with transitions: ' % self.n_component)
+        f_logging.write('Fitting %i components with transitions:\n' % self.n_component)
         for i in xrange(len(self.transitions_params_array)):
             for j in xrange(len(self.transitions_params_array[i])):
                 if not np.isnan(self.transitions_params_array[i][j]).any():
                     for k in xrange(len(self.transitions_params_array[i][j])):
                         rest_wavelength = self.transitions_params_array[i][j][k][1]
-                        print('    Transitions Wavelength: %.3f' % rest_wavelength)
+                        f_logging.write('    Transitions Wavelength: %.3f\n' % rest_wavelength)
                 else:
-                    print('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
-                    exit()
+                    sys.exit('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
 
-        print('Selected data wavelegnth region:')
+        f_logging.write('Selected data wavelegnth region:\n')
         for i in xrange(len(self.wave_begins)):
-            print('    [%.3f, %.3f]' % (self.wave_begins[i],self.wave_ends[i])) 
+            f_logging.write('    [%.3f, %.3f]\n' % (self.wave_begins[i],self.wave_ends[i])) 
         
         if self.cont_normalize:
-            print('Continuum polynomial degree: %i'     % (self.cont_nparams - 1))
-        print('MCMC Sampler: %s' % self.mcmc_sampler)
-        print('Model selection method: %s' % self.model_selection)
-        print('Walkers,steps,threads : %i,%i,%i' % (self.nwalkers,self.nsteps,self.nthreads))
-        print('Priors: ')
-        print('logN:     [min,   max] = [%.3f, %.3f] ' % (self.priors[0][0],self.priors[0][1]))
-        print('b:        [min,   max] = [%.3f, %.3f] ' % (self.priors[1][0],self.priors[1][1]))
-        print('redshift: [min,   max] = [%.5f, %.5f] ' % (self.priors[2][0],self.priors[2][1]))
-        print('\n')
+            f_logging.write('Continuum polynomial degree: %i\n'     % (self.cont_nparams - 1))
+        f_logging.write('MCMC Sampler: %s\n' % self.mcmc_sampler)
+        f_logging.write('Model selection method: %s\n' % self.model_selection)
+        f_logging.write('Walkers,steps,threads : %i,%i,%i\n' % (self.nwalkers,self.nsteps,self.nthreads))
+        f_logging.write('Priors: ')
+        f_logging.write('logN: [min,   max] = [%.3f, %.3f]\n' % (self.priors[0][0],self.priors[0][1]))
+        f_logging.write('b:            [min,   max] = [%.3f, %.3f]\n' % (self.priors[1][0],self.priors[1][1]))
+        f_logging.write('redshift:     [min,   max] = [%.5f, %.5f]\n' % (self.priors[2][0],self.priors[2][1]))
+        f_logging.close()
+    
+def main():
+    parser = MyParser()
+    parser.add_argument('config_fname',help="full path to config filename", nargs='?')
+    parser.add_argument("-t", "--test",help="test for reading config file",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose",help="print config summary to file ",
+                        action="store_true")
+    
 
-    def plot_spec(self):
-        import matplotlib.pyplot as pl
-        pl.step(self.wave,self.flux,color='k')
-        pl.step(self.wave,self.dflux,color='r')
-        
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    
+    args = parser.parse_args()
+
+    if args.test:
+        from bayesvp.utilities import get_bayesvp_Dir
+        path = get_bayesvp_Dir()
+        config_fname = path + '/data/example/config_OVI.dat'
+        config_params = DefineParams(config_fname)
+        config_params.print_config_params()
+
+    if args.config_fname is None: 
+        pass
+    else:
+        if os.path.isfile(args.config_fname):
+            config_params = DefineParams(args.config_fname)
+            if args.verbose:
+                config_params.print_config_params()
+        else:
+            sys.exit('Config file does not exist:\n %s' % args.config_fname)
 
 if __name__ == '__main__':
-
-    # test
-    import sys
-    config_fname = sys.argv[1]
-    
-    # Load config parameter object 
-    obs_spec = DefineParams(config_fname)    
-    obs_spec.print_config_params()
+    sys.exit(main() or 0)
