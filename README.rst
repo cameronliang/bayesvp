@@ -67,7 +67,7 @@ file.
 
     bvpfit full_path_to_my_own_config_file.dat
 
-It should just be this easy if ``bayesvp`` is installed correctly and your environment ``PATH`` knows the location of these executable. 
+It should just be this easy if ``bayesvp`` is installed correctly and your environment ``PATH`` knows the location of these executables. 
 
 Required libraries:
 -------------------
