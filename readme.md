@@ -2,7 +2,7 @@
 bayesvp
 ========
 
-``bayesvp`` is a Bayesian MCMC Voigt profile fitting routine. ``bayesvp`` provides a number of helpful executable scripts that work with command line arguments (saved in your environment ``PATH``). The main functionality is, of course, the MCMC Voigt profile fitting (``bvpfit``), that user supplies a config file that specifies parameter priors, number of walkers, parallel threads, and etc. There are utility functions that allow users to quickly create an example config file, plot the chain, plot and process the best fit models.  You can find more details in the code paper, [Liang & Kravtsov 2017](http://adsabs.harvard.edu/abs/2017arXiv171009852L) or a related paper [Liang et al. 2017](http://adsabs.harvard.edu/abs/2017arXiv171000411L)
+``bayesvp`` is a Bayesian MCMC parallel Voigt profile fitting routine. ``bayesvp`` provides a number of helpful executable scripts that work with command line arguments (saved in your environment ``PATH``). The main functionality is the MCMC Voigt profile fitting (``bvpfit``) where the user supplies a config file that specifies parameters for the fitting. These include parameter priors, number of walkers, parallel threads, line spread function, continuum model, Bayesian model comparisons, and etc. There are utility functions that allow users to quickly create an example config file, process and plot the chains, process and plot the best fit models and more. You can find more details on the code paper, [Liang & Kravtsov 2017](http://adsabs.harvard.edu/abs/2017arXiv171009852L) or a related paper [Liang et al. 2017](http://adsabs.harvard.edu/abs/2017arXiv171000411L)
 
 
 Installation
@@ -37,9 +37,15 @@ The output should look something like this:
 
 If you encounter any error, please send output to the author. 
 
-You can also run a full test example by executing: 
 
-    bvpfit --test
+Usage and Tests:
+-------------------
+
+You can run a full test example by executing: 
+
+    bvpfit --test -pc
+
+If the optional ``-pc`` flag is supplied, the default config file and a log are written to the current directory at which the command is run. 
 
 This will run an MCMC fit with the default config file and test spectrum (./data/example). 
 After the fit is finished, to process the MCMC chain, you can type: 
@@ -56,9 +62,15 @@ usage of bvpfit, simply type:
 
     bvpfit -h
 
+You may want to use the newly generated default config file after the test to set up absorption line systems of your own. Instead of ``--test``, you can supply your own config 
+file.
+
+    bvpfit full_path_to_my_own_config_file.dat
+
+It should just be this easy if ``bayesvp`` is installed correctly and your environment ``PATH`` knows the location of these executable. 
 
 Required libraries:
-------------
+-------------------
 
 1) numpy, scipy, matplotlib and pyfits. 
 
@@ -69,9 +81,9 @@ Required libraries:
 4) [Corner plot](https://corner.readthedocs.io/en/latest/)
 
 Notes/Tips/Cautions:
-------------
+--------------------
 
-1. For placing constraints for upper limits, one should not initialize walkers too far away from 'reasonable' parameters(e.g., column density or redshift if you know it from somewhere else). For example, if one knows logN= 15 is clearly too large given the data, then walkers should be initialized such that they do not waste time to get back to smaller logN and/or get stuck at larger logN. 
+1. For placing constraints on non-detections (i.e., upper limits), one should not initialize walkers too far away from 'reasonable' parameters(e.g., column density or redshift if you know it from somewhere else). For example, if one knows logN= 15 is clearly too large given the data, then walkers should be initialized such that they do not waste time to get back to smaller logN and/or get stuck at larger logN. 
 
 2. For upper limits, it is better to fix the redshift of the desired system in order to place constraints. 
 
@@ -91,7 +103,6 @@ Author:        Cameron Liang (jwliang@oddjob.uchicago.edu; cameron.liang@gmail.c
 Contributors:  Andrey Kravtsov
 
 License:       MIT. Copyright (c) 2017-2018
-
 
 If you use ``bayesvp``, please cite the paper: 
 
