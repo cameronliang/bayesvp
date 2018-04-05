@@ -12,7 +12,6 @@
 import numpy as np
 import sys
 import os
-import logging
 
 
 from bayesvp.config import DefineParams
@@ -44,10 +43,11 @@ def _create_walkers_init(config_params):
 	
 	Returns
 	-----------
-	p0.T: array; shape = (nwalkers,ndim)
+	p0.T: array; shape = (nwalkers, ndim)
 		The starting point of the walkers at n dimensions, where
-		n = number of parameters. These will then walk/sample around 
-		the parameters space based on the MCMC algorithm used. 
+		n = number of parameters. These will then walk/sample 
+		around the parameters space based on the MCMC algorithm 
+		used.
 	"""
 
 	temp_flags = config_params.vp_params_flags[~np.isnan(config_params.vp_params_flags)]
@@ -58,7 +58,7 @@ def _create_walkers_init(config_params):
 
 	p0 = np.zeros((n_params,config_params.nwalkers))
 	for i in xrange(n_params):
-		# require if-conditions for specific parameters 
+		# Match priors with the parameter types
 		if final_vp_params_type[i] == 'logN':
 			p0[i] = np.random.uniform(config_params.priors[0][0],
 									config_params.priors[0][1],

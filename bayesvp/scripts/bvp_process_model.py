@@ -1,12 +1,12 @@
 ###############################################################################
 #
-# bvp_plot_model.py     (c) Cameron Liang 
+# bvp_process_model.py  (c) Cameron Liang
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
 # Process model outputs such as corner plot, GR plot, and associated    
 # ascii data files. 
-# 
+#
 ###############################################################################
 
 
@@ -89,7 +89,7 @@ class ProcessModel:
         param_label = self.ascii_filename_label[n] 
         x = self.params_pdfs[n][0]; log_pdf = self.params_pdfs[n][1]
 
-        # write to disk
+        # write to file
         output_name_prefix = self.config_param.data_product_path_files+'/pdf_'+ \
                             param_label +'_'+ self.config_param.chain_short_fname 
         
@@ -254,7 +254,8 @@ class ProcessModel:
         np.savetxt(output_fname,np.c_[self.config_param.wave,
                                       self.config_param.flux, 
                                       self.config_param.dflux,
-                                      self.model_flux],header='wave\tflux\terror\tmodel\n')
+                                      self.model_flux],
+                                      header='wave\tflux\terror\tmodel\n')
         print('Written %s' % output_fname)
         
     def write_model_summary(self):

@@ -6,22 +6,22 @@ import numpy as np
 from bayesvp.config import DefineParams
 from bayesvp.utilities import get_bayesvp_Dir
 
-###############################################################################
-# TEST CASE 1: OVI line with stock config file and spectrum
+"""
+TEST CASE 1: OVI line with stock config file and spectrum
 
 
-# config file, bayesvp/data/example/bvp_configs/config_OVI.dat,
-# should contain the following:
+The stock config file at bayesvp/data/example/bvp_configs/config_OVI.dat
+should contain the following:
 
-# spec_path test_path_to_spec
-# output o6
-# mcmc 100 200 4 bic kombine
-# %% OVI.spec 1030.000000 1033.000000
-# % O VI 15 30 0.000000
-# logN 10.00 18.00
-# b    0.00 100.00
-# z    0.000000 300.00
-###############################################################################
+spec_path test_path_to_spec
+output o6
+mcmc 100 200 4 bic kombine
+%% OVI.spec 1030.000000 1033.000000
+% O VI 15 30 0.000000
+logN 10.00 18.00
+b    0.00 100.00
+z    0.000000 300.00
+"""
 
 class TCConfigFile(unittest.TestCase):
 
@@ -30,6 +30,13 @@ class TCConfigFile(unittest.TestCase):
         # read example config file
         self.config_ex = code_path + '/data/example/config_OVI.dat'
         self.config_params = DefineParams(self.config_ex)
+
+    def tearDown(self):
+        try:
+            import shutil
+            shutil.rmtree(self.config_params.output_path)
+        except OSError as oserr:
+            print(oserr)
 
     def test_config_file_exists(self):
         self.assertTrue(os.path.isfile(self.config_ex))
@@ -101,5 +108,4 @@ class TCConfigFile(unittest.TestCase):
 
 
 if __name__ == '__main__':
-
     unittest.main()

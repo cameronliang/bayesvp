@@ -1,11 +1,11 @@
 ################################################################################
 #
-# write_bvp_config.py 	(c) Cameron Liang 
+# bvp_write_config.py 	(c) Cameron Liang
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
-# Interactive script to aid writing a config file for voigt profile fitting. 
-#
+# Script to aid writing a config file for voigt profile fitting. 
+# Use either automatic for writing a default one or interactive to make your own
 ################################################################################
 
 import os

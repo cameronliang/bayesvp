@@ -68,13 +68,20 @@ class Posterior(object):
         parameters [logN, b, z]
 
         Note that for redshift z, the ranges are defined 
-        to be [mean_z-v/c,mean_z+v/c]  
+        to be [mean_z-v/c, mean_z+v/c]
+
+        Note also the default continuum parameters
+        are limited +/- 1. It is so because 'pivoting'
+        is used during the fit. The value can be set
+        by cont_prior flag in config file (cont_flag 2.0)
         """
-        
+
         # Define these for clarity
         min_logN,max_logN = self.config_params.priors[0] 
         min_b,max_b       = self.config_params.priors[1]
         min_z,max_z       = self.config_params.priors[2]
+
+        cont_priors      = self.config_params.cont_prior # array_like
 
         # Select the parameters that are free or tie (i.e not fixed)
         final_vp_params_type = self.config_params.vp_params_type[~np.isnan(self.config_params.vp_params_flags)]
@@ -97,16 +104,17 @@ class Posterior(object):
         if not all(sorted(model_redshifts) == model_redshifts):
             sum_z_prior = -np.inf 
 
+        total_prior = sum_logN_prior + sum_b_prior + sum_z_prior
+
+        # linear continuum slope and intercept priors
         if self.config_params.cont_normalize:
-            # linear continuum slope and intercept priors
             contiuum_prior = 0
-
             for i in range(1,self.config_params.cont_nparams+1):
-                contiuum_prior += tophat_prior(alpha[-i],-1,1)
+                contiuum_prior += tophat_prior(alpha[-i],-cont_priors[i-1],
+                                                cont_priors[i-1])
+            total_prior = total_prior + contiuum_prior
 
-            return sum_logN_prior + sum_b_prior + sum_z_prior + contiuum_prior
-
-        return sum_logN_prior + sum_b_prior + sum_z_prior
+        return total_prior
 
     def __call__(self,alpha):
         """

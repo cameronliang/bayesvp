@@ -21,6 +21,13 @@ class TCPosterior(unittest.TestCase):
         self.config_params = DefineParams(self.config_ex)
         self.posterior = Posterior(self.config_params)
 
+    def tearDown(self):
+        try:
+            import shutil
+            shutil.rmtree(self.config_params.output_path)
+        except OSError as oserr:
+            print(oserr)
+
     ###########################################################################
     # Basic Tests for likelihood, prior and posterior
     ###########################################################################

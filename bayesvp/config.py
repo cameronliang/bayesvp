@@ -4,13 +4,14 @@
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
-# Read in and define all of the parameters for voigt profile based on a  
-# config file; see write_config.py for producing config file.     
+# Read in and define all of the parameters for voigt profile based on a
+# config file; see ./scripts/bvp_write_config.py for producing config file.
+# or example in ./data/example/
 ################################################################################
 
 import numpy as np
 import os
-import re 
+import re
 import sys
 import ntpath
 
@@ -30,21 +31,31 @@ class DefineParams:
         Full path to the spectrum file 
     chain_short_fname: str
         Name of the output mcmc chain (with .npy extension)
-    self_bvp_test: str
-        Determines if it is a test run
+    self_bvp_test: bool
+        True if it is a test run
     chain_fname: str
     output_path: str
     mcmc_outputpath: str
+        output path for the MCMC chain
     data_product_path: str
+        parent directory for data output
     data_product_path_files: str
+        output path for ascii files such as best fits and confidence 
+        levels
     data_product_path_plots: str
+        output path for corner plots, model comparison and etc
     nwalkers: int
+        Number of walkers
     nsteps: int
+        Number of steps for each walker
     nthreads: int
+        Number of parallel threads
     wave: array
         Selected region of the input spectral data
     flux: array
+        flux of the spectrum
     error: array
+        uncertainty of flux of the input spectrum
     wave_begins: array_like
         Selected wavelength regions bounds
     wave_ends: array_like
@@ -55,12 +66,19 @@ class DefineParams:
         Voigt profile model parameter types, i.e [logN, b, z]
     vp_params_flags: array_like
         indexed flags that indicate the parameter type
+    priors: array_like
+        Priors for three types of parameters (logN, b, z)
+        shape = (3,2)
     n_component: int
-        Number of Components defined by the model
+        Number of Vogit components defined for the model
     lsf: array_like
         Line spread function to be convolved with the model
-    priors: array_like; shape = (3,2)
-        Priors for three types of parameters (logN, b, z)
+    cont_normalize: bool
+        True if user choose to include continuum fit
+    cont_nparams: int
+        Number of parameters from the polynomial continuum model
+    cont_prior: array_like
+        All continuum parameters are limited by +/- this value
     """
 
     def __init__(self,config_fname):
@@ -85,8 +103,9 @@ class DefineParams:
         ########################################################################
         
         # continuum model preset to false
-        self.cont_normalize  = False; self.cont_nparams = 0
-
+        self.cont_normalize  = False
+        self.cont_nparams = 0
+        self.cont_prior   = 1.0
         self.self_bvp_test = False
 
         # Paths and fname strings
@@ -104,9 +123,27 @@ class DefineParams:
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
 
-            elif 'continuum' in line or 'cont' in line:
+            elif 'continuum' in line or 'contdegree' in line:
                 self.cont_normalize  = True
                 self.cont_nparams = int(line[1]) + 1 # n_param = poly degree + 1 (offset)
+
+            elif 'cont_prior' in line or 'contprior' in line:
+                if self.cont_normalize and self.cont_nparams>0:
+                    tmp_priors = [float(i) for i in line[1:]]
+                    # reverse direction to match order of cont params
+                    # {a_i} in polynomial a0*x^0 + a1*x^1 + ....
+                    tmp_priors = tmp_priors[::-1]
+                    if len(tmp_priors) == 1:
+                        # all parameters share the same prior
+                        self.cont_prior = np.ones(self.cont_nparams)*tmp_priors
+                    elif len(tmp_priors) == self.cont_nparams:
+                        # each have its unique prior
+                        self.cont_prior = np.array(tmp_priors)
+                    else:
+                        sys.exit('Please enter only 1 continuum prior or match'
+                                ' the number of continuum parameters. Exiting program..')
+                else:
+                    sys.exit('Continuum fit is not set or degree is less than 0.\n')
 
             elif 'mcmc_params' in line or 'mcmc' in line:
                 self.nwalkers = int(line[1])
@@ -147,7 +184,7 @@ class DefineParams:
             self.wave_begins = np.array(spec_data_array[2:][0::2]).astype(float)
             self.wave_ends   = np.array(spec_data_array[2:][1::2]).astype(float)
 
-            for i in xrange(len(self.wave_begins)):
+            for i in range(len(self.wave_begins)):
                 if self.wave_begins[i] >= self.wave_ends[i]:
                     sys.exit('Starting wavelength cannot be greater or equal to ending wavelength: (%.3f, %.3f); exiting program...' 
                             % (self.wave_begins[i] ,self.wave_ends[i]))
@@ -202,7 +239,7 @@ class DefineParams:
 
         logNs = []; bs = []; redshifts = []
         transitions_params_array = []
-        for i in xrange(len(component_lines)):
+        for i in range(len(component_lines)):
             line = component_lines[i]
             line = filter(None,line.split(' '))
 
@@ -219,7 +256,7 @@ class DefineParams:
 
             transitions_params_array.append([])
             # Each component gets a set of all of the transitions data
-            for j in xrange(len(self.wave_begins)):
+            for j in range(len(self.wave_begins)):
                 # each wavelength regions gets all of the transitions
                 temp_params = get_transitions_params(atom,state,self.wave_begins[j],self.wave_ends[j],float(self.redshift))
                 transitions_params_array[i].append(temp_params)
@@ -244,8 +281,8 @@ class DefineParams:
         flags = np.zeros(len(flat_params))
 
         letters = [None]*len(flat_params)
-        for i in xrange(len(flat_params)):
-            for j in xrange(len(flat_params[i])):
+        for i in range(len(flat_params)):
+            for j in range(len(flat_params[i])):
                 if flat_params[i][j].isalpha():
                     letters[i] = flat_params[i][j]
         unique_letters = filter(None,list(set(letters)))
@@ -398,28 +435,34 @@ class DefineParams:
         f_logging.write('Spectrum name: %s\n'     % self.spec_short_fname)
         
         f_logging.write('Fitting %i components with transitions:\n' % self.n_component)
-        for i in xrange(len(self.transitions_params_array)):
-            for j in xrange(len(self.transitions_params_array[i])):
+        for i in range(len(self.transitions_params_array)):
+            for j in range(len(self.transitions_params_array[i])):
                 if not np.isnan(self.transitions_params_array[i][j]).any():
-                    for k in xrange(len(self.transitions_params_array[i][j])):
+                    for k in range(len(self.transitions_params_array[i][j])):
                         rest_wavelength = self.transitions_params_array[i][j][k][1]
                         f_logging.write('    Transitions Wavelength: %.3f\n' % rest_wavelength)
                 else:
                     sys.exit('No transitions satisfy the wavelength regime for fitting;Check input wavelength boundaries')
 
         f_logging.write('Selected data wavelegnth region:\n')
-        for i in xrange(len(self.wave_begins)):
+        for i in range(len(self.wave_begins)):
             f_logging.write('    [%.3f, %.3f]\n' % (self.wave_begins[i],self.wave_ends[i])) 
         
-        if self.cont_normalize:
-            f_logging.write('Continuum polynomial degree: %i\n'     % (self.cont_nparams - 1))
         f_logging.write('MCMC Sampler: %s\n' % self.mcmc_sampler)
-        f_logging.write('Model selection method: %s\n' % self.model_selection)
+        f_logging.write('Model selection method (if needed): %s\n' % self.model_selection)
         f_logging.write('Walkers,steps,threads : %i,%i,%i\n' % (self.nwalkers,self.nsteps,self.nthreads))
         f_logging.write('Priors: ')
         f_logging.write('logN: [min,   max] = [%.3f, %.3f]\n' % (self.priors[0][0],self.priors[0][1]))
         f_logging.write('b:            [min,   max] = [%.3f, %.3f]\n' % (self.priors[1][0],self.priors[1][1]))
         f_logging.write('redshift:     [min,   max] = [%.5f, %.5f]\n' % (self.priors[2][0],self.priors[2][1]))
+        
+        if self.cont_normalize:
+            f_logging.write('Continuum polynomial degree: %i\n'     % (self.cont_nparams-1))
+            f_logging.write('Continuum priors with +/- a_i: ')
+            for i in range(len(self.cont_prior)):
+                f_logging.write('%f\t' % self.cont_prior[i])
+            f_logging.write('\n')
+        
         f_logging.close()
     
 def main():
@@ -444,9 +487,7 @@ def main():
         config_params = DefineParams(config_fname)
         config_params.print_config_params()
 
-    if args.config_fname is None: 
-        pass
-    else:
+    if args.config_fname:
         if os.path.isfile(args.config_fname):
             config_params = DefineParams(args.config_fname)
             if args.verbose:
