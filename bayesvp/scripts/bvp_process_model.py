@@ -19,7 +19,7 @@ from scipy.interpolate import interp1d
 
 from bayesvp.vp_model import continuum_model_flux
 from bayesvp.utilities import write_mcmc_stats, compute_burnin_GR
-from bayesvp.utilities import MyParser,extrapolate_pdf
+from bayesvp.utilities import MyParser,extrapolate_pdf,triage
 from bayesvp.config import DefineParams
 
 
@@ -29,11 +29,13 @@ class ProcessModel:
 
         self.config_param = config_param
         mcmc_chain_fname = config_param.chain_fname + '.npy'
-        mcmc_chain = np.load(mcmc_chain_fname)
+        self.burnin = compute_burnin_GR(config_param.chain_fname + '_GR.dat')
+        self.mcmc_chain = np.load(mcmc_chain_fname)
+        self.mcmc_chain = self.mcmc_chain[self.burnin:, :, :]
 
         # MCMC chains
-        self.burnin = compute_burnin_GR(config_param.chain_fname + '_GR.dat')
-        self.burned_in_samples = mcmc_chain[self.burnin:, :, :].reshape((-1, self.config_param.n_params))
+        
+        self.burned_in_samples = self.mcmc_chain.reshape((-1, self.config_param.n_params))
 
 
         # Best fit model parameters and spectrum flux
@@ -180,7 +182,7 @@ class ProcessModel:
         plt.clf()
         print('Written %s' % output_name)
 
-    def corner_plot(self,truths=None):
+    def corner_plot(self,nbins=30,fontsize=11,cfigsize=[6,6],truths=None):
         """
         Make triangle plot for visuaizaliton of the 
         multi-dimensional posterior
@@ -202,16 +204,15 @@ class ProcessModel:
                 if self.truths:
                     self.truths[n] = self.truths[n] * 1e5
 
-
         plt.figure(1)
-        fig = corner.corner(self.burned_in_samples,bins=30,quantiles=(0.16,0.5, 0.84),
-            truths=self.truths,truth_color='g',use_math_text=True,labels=self.plot_param_labels,
-            show_titles=True,title_kwargs={"fontsize": 16})
-
         output_name = self.config_param.data_product_path_plots + '/corner_' + \
                       self.config_param.chain_short_fname + '.png'
-        
-        plt.savefig(output_name,bbox_inches='tight')
+        weights_of_chains = np.ones_like(self.burned_in_samples)
+
+        fig = triage(self.burned_in_samples,weights_of_chains,
+                    self.plot_param_labels,figsize=cfigsize,nbins=nbins,
+                    figname=output_name,fontsize=fontsize)
+
         plt.clf()
 
         print('Written %s' % output_name)
@@ -275,7 +276,7 @@ def main():
     parser.add_argument('config_fname',help="full path to config filename", nargs='?',type=str)
     parser.add_argument('redshift',help="central redshift for plotting spectrum", nargs='?',type=float)
     parser.add_argument('dv',help="velocity range for spectrum (+/-dv)", nargs='?',type=float)
-    parser.add_argument("--truths", nargs='+', type=float)
+    #parser.add_argument("--truths", nargs='+', type=float)
     parser.add_argument('-t', "--test",help="plot data product of test", action="store_true")    
     
     args = parser.parse_args()
@@ -304,7 +305,8 @@ def main():
     output_model.write_model_summary()
     output_model.write_model_spectrum()
     output_model.plot_gr_indicator()
-    output_model.corner_plot(args.truths)
+    #output_model.corner_plot(nbins=30,truths=args.truths)
+    output_model.corner_plot(nbins=30)
 
 
 if __name__ == '__main__':
