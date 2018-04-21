@@ -187,7 +187,6 @@ class ProcessModel:
         Make triangle plot for visuaizaliton of the 
         multi-dimensional posterior
         """
-        import corner
 
         self.truths = truths
         if self.truths:
