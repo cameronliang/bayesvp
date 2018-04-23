@@ -200,10 +200,10 @@ def bvp_mcmc(config_fname,print_config=False):
 			# compare with the previous fit 
 			if 0 < n <= n_component_max-1:
 
-				if config_params.model_selection.lower() in ('odds','bf'):   
-					index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
+				#if config_params.model_selection.lower() in ('odds','bf'):   
+				#	index = np.where(model_evidence[:n+1] == np.max(model_evidence[:n+1]))[0]
 
-				elif config_params.model_selection.lower() in ('aic','bic'):
+				if config_params.model_selection.lower() in ('aic','bic'):
 					index = np.where(model_evidence[:n+1] == np.min(model_evidence[:n+1]))[0]
 
 				# Compare BIC/AIC/Odds ratios

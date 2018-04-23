@@ -74,11 +74,7 @@ Required libraries:
 
 1) numpy, scipy, matplotlib and pyfits. 
 
-2) sklearn
-
-3) MCMC Sampler ([kombine](http://home.uchicago.edu/~farr/kombine/kombine.html) and/or [emcee](http://dan.iel.fm/emcee/current/))
-
-4) [Corner plot](https://corner.readthedocs.io/en/latest/)
+2) MCMC Samplers ([kombine](http://home.uchicago.edu/~farr/kombine/kombine.html) and/or [emcee](http://dan.iel.fm/emcee/current/))
 
 Notes/Tips/Cautions:
 --------------------

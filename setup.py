@@ -22,6 +22,6 @@ setup(name='bayesvp',
     install_requires=[
         'numpy', 'scipy',
         'matplotlib', 
-        'kombine','emcee', 'sklearn'
+        'kombine','emcee'
         ],
     zip_safe=False)

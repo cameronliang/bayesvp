@@ -97,84 +97,83 @@ def model_info_criterion(obs_spec_obj):
 	Data Mining and Machine Learning in Astronomy" (2014)
 	"""
 
-	if obs_spec_obj.model_selection.lower() in ('odds','bf'):
-		return local_density_bf(obs_spec_obj) 
+	#if obs_spec_obj.model_selection.lower() in ('odds','bf'):
+	#	return local_density_bf(obs_spec_obj) 
 
-	else:
-		from Likelihood import Posterior
-		# Define the posterior function based on data
-		lnprob = Posterior(obs_spec_obj)
-
-		data_length = len(obs_spec_obj.flux)
-
-		chain = np.load(obs_spec_obj.chain_fname + '.npy')
-		n_params = np.shape(chain)[-1]
-		samples = chain.reshape((-1,n_params))
-		medians = np.median(samples,axis=0) # shape = (n_params,)
-
-		log10_L = lnprob(medians)
-		lnL = log10_L /np.log10(2.7182818)
-		if obs_spec_obj.model_selection.lower() == 'aic':
-			return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
-		elif obs_spec_obj.model_selection.lower() == 'bic':
-			return -2*lnL + n_params*np.log(data_length)
-	
-		else:
-			print('model_selection is not defined to either be aic or bic')
-			sys.exit()
-
-def estimate_bayes_factor(traces, logp, r=0.05):
-	"""
-	Esitmate Odds ratios in a random subsample of the chains in MCMC
-	AstroML (see Eqn 5.127, pg 237)
-	"""
-	from sklearn.neighbors import BallTree
-	
-	ndim, nsteps = traces.shape # [ndim,number of steps in chain]
-
-	# compute volume of a n-dimensional (ndim) sphere of radius r
-	Vr = np.pi ** (0.5 * ndim) / gamma(0.5 * ndim + 1) * (r ** ndim)
-
-	# use neighbor count within r as a density estimator
-	bt = BallTree(traces.T)
-	count = bt.query_radius(traces.T, r=r, count_only=True)
-
-	# BF = N*p/rho
-	bf = logp + np.log(nsteps) + np.log(Vr) - np.log(count) #log10(bf)
-
-	p25, p50, p75 = np.percentile(bf, [25, 50, 75])
-	return p50, 0.7413 * (p75 - p25)
-
-########################################################################
-
-def local_density_bf(obs_spec_obj):
-	"""
-	Bayes Factor: L(M) based on local density estimate
-	See (5.127) in Ivezic+ 2014 (AstroML)
-
-	Assuming we need only L(M) at a given point.
-	"""
 	from Likelihood import Posterior
-	from kombine.clustered_kde import ClusteredKDE
-
 	# Define the posterior function based on data
 	lnprob = Posterior(obs_spec_obj)
+
+	data_length = len(obs_spec_obj.flux)
+
 	chain = np.load(obs_spec_obj.chain_fname + '.npy')
 	n_params = np.shape(chain)[-1]
 	samples = chain.reshape((-1,n_params))
+	medians = np.median(samples,axis=0) # shape = (n_params,)
 
-	# KDE estimate of the sample
-	sample_fraction = 0.2
-	n_sample = (obs_spec_obj.nsteps)*sample_fraction
-	ksample = ClusteredKDE(samples)
-	sub_sample = ksample.draw(n_sample) 
+	log10_L = lnprob(medians)
+	lnL = log10_L /np.log10(2.7182818)
+	if obs_spec_obj.model_selection.lower() == 'aic':
+		return -2*lnL + 2*n_params + 2*n_params*(n_params+1)/(np.log(data_length) - n_params - 1)
+	elif obs_spec_obj.model_selection.lower() == 'bic':
+		return -2*lnL + n_params*np.log(data_length)
 
-	logp = np.zeros(n_sample)
-	for i in xrange(n_sample):
-		logp[i] = lnprob(sub_sample[i])
+	else:
+		print('model_selection is not defined to either be aic or bic')
+		sys.exit()
 
-	bf,dbf = estimate_bayes_factor(sub_sample.T,logp)
-	return bf
+#def estimate_bayes_factor(traces, logp, r=0.05):
+#	"""
+#	Esitmate Odds ratios in a random subsample of the chains in MCMC
+#	AstroML (see Eqn 5.127, pg 237)
+#	"""
+#	from sklearn.neighbors import BallTree
+#	
+#	ndim, nsteps = traces.shape # [ndim,number of steps in chain]
+#
+#	# compute volume of a n-dimensional (ndim) sphere of radius r
+#	Vr = np.pi ** (0.5 * ndim) / gamma(0.5 * ndim + 1) * (r ** ndim)
+#
+#	# use neighbor count within r as a density estimator
+#	bt = BallTree(traces.T)
+#	count = bt.query_radius(traces.T, r=r, count_only=True)
+#
+#	# BF = N*p/rho
+#	bf = logp + np.log(nsteps) + np.log(Vr) - np.log(count) #log10(bf)
+#
+#	p25, p50, p75 = np.percentile(bf, [25, 50, 75])
+#	return p50, 0.7413 * (p75 - p25)
+
+########################################################################
+
+#def local_density_bf(obs_spec_obj):
+#	"""
+#	Bayes Factor: L(M) based on local density estimate
+#	See (5.127) in Ivezic+ 2014 (AstroML)
+#
+#	Assuming we need only L(M) at a given point.
+#	"""
+#	from Likelihood import Posterior
+#	from kombine.clustered_kde import ClusteredKDE
+#
+#	# Define the posterior function based on data
+#	lnprob = Posterior(obs_spec_obj)
+#	chain = np.load(obs_spec_obj.chain_fname + '.npy')
+#	n_params = np.shape(chain)[-1]
+#	samples = chain.reshape((-1,n_params))
+#
+#	# KDE estimate of the sample
+#	sample_fraction = 0.2
+#	n_sample = (obs_spec_obj.nsteps)*sample_fraction
+#	ksample = ClusteredKDE(samples)
+#	sub_sample = ksample.draw(n_sample) 
+#
+#	logp = np.zeros(n_sample)
+#	for i in xrange(n_sample):
+#		logp[i] = lnprob(sub_sample[i])
+#
+#	bf,dbf = estimate_bayes_factor(sub_sample.T,logp)
+#	return bf
 
 def compare_model(L1,L2,model_selection):
 	"""
@@ -187,34 +186,34 @@ def compare_model(L1,L2,model_selection):
 
 	if model_selection in ('bic', 'aic'):
 		return L1 <= L2
-	elif model_selection in ('odds', 'BF','bf'):
-		return L1-L2 >= 0
+	#elif model_selection in ('odds', 'BF','bf'):
+	#	return L1-L2 >= 0
 
 ###############################################################################
 # Others 
 ###############################################################################
-def bic_gaussian_kernel(chain_fname,data_length):
-	"""
-	Bayesian information criterion
-	Only valid if data_length >> n_params
-
-	# Note that bandwidth of kernel is set to 1 universally
-	"""
-	from sklearn.neighbors import KernelDensity
-
-	chain = np.load(chain_fname + '.npy')
-	n_params = np.shape(chain)[-1]
-	samples = chain.reshape((-1,n_params))
-	kde = KernelDensity(kernel='gaussian',bandwidth=1).fit(samples)
-
-	# Best fit = medians of the distribution
-	medians = np.median(samples,axis=0) # shape = (n_params,)
-	medians = medians.reshape(1,-1) 	# Reshape to (1,n_params)
-	
-	log10_L = float(kde.score_samples(medians)) 
-	lnL = log10_L /np.log10(2.7182818)
-	 
-	return -2*lnL + n_params*np.log(data_length)
+#def bic_gaussian_kernel(chain_fname,data_length):
+#	"""
+#	Bayesian information criterion
+#	Only valid if data_length >> n_params
+#
+#	# Note that bandwidth of kernel is set to 1 universally
+#	"""
+#	from sklearn.neighbors import KernelDensity
+#
+#	chain = np.load(chain_fname + '.npy')
+#	n_params = np.shape(chain)[-1]
+#	samples = chain.reshape((-1,n_params))
+#	kde = KernelDensity(kernel='gaussian',bandwidth=1).fit(samples)
+#
+#	# Best fit = medians of the distribution
+#	medians = np.median(samples,axis=0) # shape = (n_params,)
+#	medians = medians.reshape(1,-1) 	# Reshape to (1,n_params)
+#	
+#	log10_L = float(kde.score_samples(medians)) 
+#	lnL = log10_L /np.log10(2.7182818)
+#	 
+#	return -2*lnL + n_params*np.log(data_length)
 
 
 ###############################################################################
