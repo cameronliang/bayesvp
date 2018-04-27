@@ -84,7 +84,8 @@ class ProcessModel:
 
 
     def save_marginalized_pdf(self,n):
-        """Plot and save the marginalized distribution of voigt profile parameters"""
+        """Plot and save the marginalized distribution of voigt profile parameters
+        """
         
         param_type  = self.config_param.vp_params_type[n]
         param_pos   = self.config_param.vp_params_flags[n]
