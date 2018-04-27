@@ -12,7 +12,7 @@ I recommend installing bayesvp with pip with the ``--user`` flag:
 
     pip install bayesvp --user
 
-This usually puts the executable scripts in ``~/.local/bin``. Make sure that this is in your PATH. 
+This usually puts the executable scripts in ``~/.local/bin``. For MacOS users, ``~/Users/username/.local/bin``, where ``username`` is your username of your mac. Make sure that this is in your PATH. 
 
 You can also install it system-wide and might need to add ``sudo`` in the beginning. 
 
@@ -39,7 +39,7 @@ If you encounter any error, please send output to the author.
 
 
 Usage and Tests:
--------------------
+----------------
 
 You can run a full test example by executing: 
 

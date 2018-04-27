@@ -117,6 +117,7 @@ class DefineParams:
                     self.spec_path = (os.path.dirname(os.path.abspath(__file__)) + 
                                      '/data/example')
                     self.self_bvp_test = True
+
                 else:
                     self.spec_path = line[1]
 
@@ -425,8 +426,23 @@ class DefineParams:
     def print_config_params(self):
 
         # First copy the original config file to output path
+        # but replace the `test_path_to_spec` to actual output path
         with open(self.output_path + '/' + self.config_basename,'w') as f_config:
-            f_config.writelines('\n'.join(self.lines))
+            # Paths and fname strings
+            for line in self.lines:
+                tmp_line = filter(None,line.split(' '))
+
+                if 'spec_path' in tmp_line or 'input' in tmp_line or 'spectrum' in tmp_line:
+                    if tmp_line[1] == 'test_path_to_spec':
+                        cwd = os.getcwd()
+                        print cwd + self.output_path[1:]
+                        f_config.write('spec_path %s\n' % (cwd + self.output_path[1:]))
+                else:
+                    f_config.write('%s\n' % line)
+        
+        # Also copy the spectrum to the output path in the case of a test
+        import shutil
+        shutil.copy(self.spec_fname,self.output_path)
 
         f_logging = open(self.output_path + '/config.log','w')
 
