@@ -164,7 +164,7 @@ class ProcessModel:
         obs_spec_dv = c*(obs_spec_wave - central_wave) / central_wave
         plt.rc('text', usetex=True)
 
-        plt.figure(1)
+        plt.figure(1,figsize=(6,6))
         plt.step(obs_spec_dv,self.config_param.flux,'k',label=r'$\rm Data$')
         plt.step(obs_spec_dv,self.model_flux,'b',lw=2,label=r'$\rm Best\,Fit$')
         plt.step(obs_spec_dv,self.config_param.dflux,'r')
@@ -178,7 +178,7 @@ class ProcessModel:
         plt.legend(loc='best')
         
         output_name = (self.config_param.data_product_path_plots + '/modelspec_'
-                      + self.config_param.chain_short_fname + '.png')
+                      + self.config_param.chain_short_fname + '.pdf')
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
         print('Written %s' % output_name)
@@ -206,12 +206,12 @@ class ProcessModel:
 
         plt.figure(1)
         output_name = self.config_param.data_product_path_plots + '/corner_' + \
-                      self.config_param.chain_short_fname + '.png'
+                      self.config_param.chain_short_fname + '.pdf'
         weights_of_chains = np.ones_like(self.burned_in_samples)
 
         fig = triage(self.burned_in_samples,weights_of_chains,
                     self.plot_param_labels,figsize=cfigsize,nbins=nbins,
-                    figname=output_name,fontsize=fontsize)
+                    figname=output_name,fontsize=fontsize,labelsize=10)
 
         plt.clf()
 

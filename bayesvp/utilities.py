@@ -450,7 +450,7 @@ def conf_interval(x, pdf, conf_level):
     return np.sum(pdf[pdf > x])-conf_level
 
 def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
-		hist1d_color='#3681f9',figsize=[5,5], figname=None, fontsize=8):
+		hist1d_color='#3681f9',figsize=[6,6], figname=None, fontsize=10,labelsize=10):
 	"""
 	Plot the multi-dimensional and marginalized posterior distribution (e.g., `corner` plot)
 
@@ -476,6 +476,8 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 		fontsize of the labels 
 	"""
 
+	import matplotlib.gridspec as gridspec
+
 	import itertools as it
 	import scipy.optimize as opt
 	from matplotlib.colors import LogNorm
@@ -491,11 +493,27 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 	
 
 	npar = np.size(par[1,:])
-    
-	f, ax = plt.subplots(npar, npar, figsize=(figsize), sharex='col')
-	plt.rc('font',size=fontsize)
+	fig = plt.figure(figsize=figsize)
+	gs = gridspec.GridSpec(npar, npar,wspace=0.05,hspace=0.05,
+		width_ratios=[1,1,1],height_ratios=[1,1,1])
+
+
+	
 	for h,v in it.product(range(npar), range(npar)) :
-		if v < h :
+		ax = plt.subplot(gs[h, v])
+
+
+		x_min, x_max = np.min(par[:,v]), np.max(par[:,v])
+		y_min, y_max = np.min(par[:,h]), np.max(par[:,h])
+
+		ax.tick_params(axis='both', which='major', labelsize=labelsize)
+		ax.tick_params(axis='both', which='minor', labelsize=labelsize)	
+		if h < npar-1:
+			ax.get_xaxis().set_ticklabels([])
+		if v > 0:
+			ax.get_yaxis().set_ticklabels([])
+
+		if h > v :
 			hvals, xedges, yedges = np.histogram2d(par[:,v], par[:,h], 
 									weights=weights[:,0], bins = nbins)
 			hvals = np.rot90(hvals)
@@ -511,42 +529,46 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 			sig3 = opt.brentq( conf_interval, 0., 1., args=(hvals,0.997) )
 			lvls = [sig3, sig2, sig1]   
 						
-			ax[h,v].pcolor(X, Y, (Hmasked), cmap=hist2d_color, norm = LogNorm())
-			ax[h,v].contour(hvals, linewidths=(1.0, 0.5, 0.25), colors='lavender', 
+			ax.pcolor(X, Y, (Hmasked), cmap=hist2d_color, norm = LogNorm())
+			ax.contour(hvals, linewidths=(1.0, 0.5, 0.25), colors='lavender', 
 							levels = lvls, norm = LogNorm(), extent = [xedges[0], 
 							xedges[-1], yedges[0], yedges[-1]])
-			if v > 0:
-				ax[h,v].get_yaxis().set_ticklabels([])
-		elif v == h :
-			ax[h,v].hist(par[:,h],bins = nbins,color=hist1d_color,histtype='step',lw=1.5)
 
-			ax[h,v].yaxis.tick_right()
-			ax[h,v].tick_params(axis='y', colors='w') # hide y labels
+			ax.set_xlim([x_min, x_max])
+			ax.set_ylim([y_min, y_max])
+
+		elif v == h :
+			ax.hist(par[:,h],bins = nbins,color=hist1d_color,histtype='step',lw=1.5)
+		
+			ax.yaxis.set_ticklabels([])
 
 			hmedian = np.percentile(par[:,h],50)
 			h16 = np.percentile(par[:,h],16)
 			h84 = np.percentile(par[:,h],84)
 
-			ax[h,v].axvline(hmedian,lw=0.8,ls='--',color='k')
-			ax[h,v].axvline(h16,lw=0.8,ls='--',color='k')
-			ax[h,v].axvline(h84,lw=0.8,ls='--',color='k')
-			#ax[h,v].title.set_text(r'$%.2f^{+%.2f}_{-%.2f}$' % (hmedian,h84-hmedian,hmedian-h16))
+			ax.axvline(hmedian,lw=0.8,ls='--',color='k')
+			ax.axvline(h16,lw=0.8,ls='--',color='k')
+			ax.axvline(h84,lw=0.8,ls='--',color='k')
+			ax.set_xlim([x_min, x_max])
+
+			ax.set_title(r'$%.2f^{+%.2f}_{-%.2f}$' % (hmedian,h84-hmedian,hmedian-h16),
+						fontsize=fontsize)
+
 		else :
-			ax[h,v].axis('off')
+			ax.axis('off')
 
 		if v == 0:
-			ax[h,v].set_ylabel(parnames[h])
-			ax[h,v].get_yaxis().set_label_coords(-0.35,0.5)
+			ax.set_ylabel(parnames[h],fontsize=fontsize)
+			ax.get_yaxis().set_label_coords(-0.2,0.5)
 			
 		if h == npar-1:
-			ax[h,v].set_xlabel(parnames[v])
-			ax[h,v].get_xaxis().set_label_coords(0.5,-0.35)
-			labels = ax[h,v].get_xticklabels()
+			ax.set_xlabel(parnames[v],fontsize=fontsize)
+			ax.get_xaxis().set_label_coords(0.5,-0.35)
+			labels = ax.get_xticklabels()
 			for label in labels: 
 				label.set_rotation(80) 
-         
-         
-	plt.tight_layout(pad=1.5, w_pad=-4, h_pad=-0.6)
+
+	fig.get_tight_layout()
 	if figname:
 		plt.savefig(figname, dpi=120, bbox_inches='tight')
 
