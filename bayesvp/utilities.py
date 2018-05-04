@@ -496,8 +496,6 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 	fig = plt.figure(figsize=figsize)
 	gs = gridspec.GridSpec(npar, npar,wspace=0.05,hspace=0.05,
 		width_ratios=[1,1,1],height_ratios=[1,1,1])
-
-
 	
 	for h,v in it.product(range(npar), range(npar)) :
 		ax = plt.subplot(gs[h, v])
