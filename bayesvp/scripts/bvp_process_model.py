@@ -270,6 +270,21 @@ class ProcessModel:
         write_mcmc_stats(self.config_param,output_summary_fname)
 
 
+
+def bvp_process(config_fname, redshift, dv):
+    config_param = DefineParams(config_fname)
+
+    output_model = ProcessModel(config_param)
+    output_model.spline_binned_pdf()
+    output_model.plot_model_comparison(redshift,dv)
+    output_model.write_model_summary()
+    output_model.write_model_spectrum()
+    output_model.plot_gr_indicator()
+    output_model.corner_plot(nbins=30)
+
+    return None
+
+
 def main():
 
     parser = MyParser()

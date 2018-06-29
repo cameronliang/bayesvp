@@ -100,7 +100,7 @@ def model_info_criterion(obs_spec_obj):
 	#if obs_spec_obj.model_selection.lower() in ('odds','bf'):
 	#	return local_density_bf(obs_spec_obj) 
 
-	from Likelihood import Posterior
+	from likelihood import Posterior
 	# Define the posterior function based on data
 	lnprob = Posterior(obs_spec_obj)
 
@@ -153,7 +153,7 @@ def model_info_criterion(obs_spec_obj):
 #
 #	Assuming we need only L(M) at a given point.
 #	"""
-#	from Likelihood import Posterior
+#	from likelihood import Posterior
 #	from kombine.clustered_kde import ClusteredKDE
 #
 #	# Define the posterior function based on data
@@ -298,9 +298,10 @@ def extrapolate_pdf(x,pdf,left_boundary_x,right_boundary_x,x_stepsize,slope=10):
         log_pdf = np.concatenate((log_pdf,right_pdf))        
 
     # Normalize the pdf
-	pdf_tmp  = 10**log_pdf/np.sum((10**log_pdf)*(x_stepsize))
-	inds = np.where(pdf_tmp<0)[0]; pdf_tmp[inds] = np.min(pdf_tmp)
-    log_pdf = np.log10(pdf_tmp)
+	pdf_tmp2  = 10**log_pdf/np.sum((10**log_pdf)*(x_stepsize))
+	inds = np.where(pdf_tmp2<0)[0]
+	pdf_tmp2[inds] = np.min(pdf_tmp2)
+	log_pdf = np.log10(pdf_tmp2)
     return new_x, log_pdf
 
 

@@ -159,6 +159,5 @@ def main():
     if args.interactive:
         config_writer.print_to_file(args.interactive)
 
-
 if __name__ == '__main__':
     sys.exit(main() or 0)
