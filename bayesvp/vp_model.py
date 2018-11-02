@@ -265,7 +265,6 @@ def continuum_model_flux(alpha,obs_spec_obj):
     """
     Model function that includes continuum (linear order)
     """
-    
     if obs_spec_obj.cont_normalize:
         num_boundary = obs_spec_obj.cont_nparams
         model_flux = generic_prediction(alpha[:-num_boundary],obs_spec_obj)

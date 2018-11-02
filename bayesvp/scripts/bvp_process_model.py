@@ -156,6 +156,9 @@ class ProcessModel:
 
         if central_wave == None:
             # Use the first transition as the central wavelength
+            if np.isnan(self.config_param.transitions_params_array):
+                sys.exit('Could not find any transitions of ion in wavelength range.'\
+                        'Check redshift and wavelength range. Exiting program...' )
             central_wave = self.config_param.transitions_params_array[0][0][0][1]
         else:
             central_wave = float(central_wave)
@@ -228,13 +231,14 @@ class ProcessModel:
         
         plt.figure(1,figsize=(6,6))
         for i in xrange(len(grs)):
-            plt.plot(steps,grs[i],lw=1.5,label=self.gr_param_label[i])
+            plt.plot(steps,grs[i]-1,lw=1.5,label=self.gr_param_label[i])
             
         plt.legend(loc='best')
         plt.xscale('log')
+        plt.yscale('log')
 
         plt.xlabel(r'$N(\rm{steps})$',fontsize=15)
-        plt.ylabel(r'$R_{\rm GR}$',fontsize=15)
+        plt.ylabel(r'$R_{\rm GR} - 1$',fontsize=15)
 
         output_name = self.config_param.data_product_path_plots + '/GR_' + \
                       self.config_param.chain_short_fname + '.png'
@@ -322,7 +326,6 @@ def main():
     output_model.plot_gr_indicator()
     #output_model.corner_plot(nbins=30,truths=args.truths)
     output_model.corner_plot(nbins=30)
-
 
 if __name__ == '__main__':
     sys.exit(main() or 0)

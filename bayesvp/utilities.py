@@ -437,12 +437,13 @@ def get_transitions_params(atom,state,wave_start,wave_end,redshift):
 	mass = mass*amu 
 
 	inds = np.where((atoms == atom) & 
-					(states == state) & 
+					(states == state) &
 					(wave >= wave_start/(1+redshift)) & 
 					(wave < wave_end/(1+redshift)))[0]
  
+
 	if len(inds) == 0:
-		return np.empty(4)*np.nan
+		return np.nan
 	else:
 		return np.array([osc_f[inds],wave[inds],Gamma[inds], mass[inds]]).T
 
@@ -492,13 +493,12 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 	# ignore warning for log10 of parameters with values <=0.
 	warnings.simplefilter(action='ignore', category=UserWarning)
 	
-
+	
 	npar = np.size(par[1,:])
 	fig = plt.figure(figsize=figsize)
-	gs = gridspec.GridSpec(npar, npar,wspace=0.05,hspace=0.05,
-		width_ratios=[1,1,1],height_ratios=[1,1,1])
-	
-	for h,v in it.product(range(npar), range(npar)) :
+	gs = gridspec.GridSpec(npar, npar,wspace=0.05,hspace=0.05)
+
+	for h,v in it.product(range(npar), range(npar)):
 		ax = plt.subplot(gs[h, v])
 
 
