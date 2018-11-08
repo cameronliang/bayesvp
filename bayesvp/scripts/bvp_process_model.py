@@ -55,13 +55,13 @@ class ProcessModel:
             if n < self.config_param.n_params-self.config_param.cont_nparams:
                 if self.config_param.vp_params_type[n] == 'logN':
                     logN_counter += 1
-                    temp_label = r'$\log N_{%s}/\rm{cm^{-2}}$' % str(logN_counter)
+                    temp_label = r'$\log N_{%s}$' % str(logN_counter)
                     self.plot_param_labels.append(temp_label)
                     self.gr_param_label.append(r'$logN_{%s}$' % str(logN_counter))
                     self.ascii_filename_label.append('logN_%s' % str(logN_counter))
                 elif self.config_param.vp_params_type[n] == 'b':
                     b_counter += 1
-                    temp_label = r'$b_{%s}/\rm{km s^{-1}}$' % str(b_counter)
+                    temp_label = r'$b_{%s}$' % str(b_counter)
                     self.plot_param_labels.append(temp_label)
                     self.gr_param_label.append(r'$b_{%s}$' % str(b_counter))
                     self.ascii_filename_label.append('b_%s' % str(b_counter))
@@ -81,7 +81,8 @@ class ProcessModel:
         self.plot_param_labels   = np.array(self.plot_param_labels)
         self.gr_param_label = np.array(self.gr_param_label)
         self.ascii_filename_label = np.array(self.ascii_filename_label)
-
+        print('output path: ')
+        print(self.config_param.data_product_path_files[:-6])
 
     def save_marginalized_pdf(self,n):
         """Plot and save the marginalized distribution of voigt profile parameters
@@ -106,7 +107,8 @@ class ProcessModel:
                 f.write('%.4f\t%.16f\n' % (x[i], log_pdf[i]))
         f.close()
 
-        print('Written %s' % output_name_prefix + '.dat')
+        print('--> %s' % 'pdf_'+ param_label +'_'+ \
+            self.config_param.chain_short_fname + '.dat')
 
 
     def spline_binned_pdf(self,bins = 30, interp_kind = 'linear'):
@@ -156,9 +158,6 @@ class ProcessModel:
 
         if central_wave == None:
             # Use the first transition as the central wavelength
-            if np.isnan(self.config_param.transitions_params_array):
-                sys.exit('Could not find any transitions of ion in wavelength range.'\
-                        'Check redshift and wavelength range. Exiting program...' )
             central_wave = self.config_param.transitions_params_array[0][0][0][1]
         else:
             central_wave = float(central_wave)
@@ -184,9 +183,9 @@ class ProcessModel:
                       + self.config_param.chain_short_fname + '.pdf')
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
-        print('Written %s' % output_name)
+        print('--> %s' % 'modelspec_' + self.config_param.chain_short_fname + '.pdf')
 
-    def corner_plot(self,nbins=30,fontsize=11,cfigsize=[6,6],truths=None):
+    def corner_plot(self,nbins=30,fontsize=None,cfigsize=[6,6],truths=None):
         """
         Make triangle plot for visuaizaliton of the 
         multi-dimensional posterior
@@ -214,11 +213,11 @@ class ProcessModel:
 
         fig = triage(self.burned_in_samples,weights_of_chains,
                     self.plot_param_labels,figsize=cfigsize,nbins=nbins,
-                    figname=output_name,fontsize=fontsize,labelsize=10)
+                    figname=output_name,fontsize=fontsize)
 
         plt.clf()
 
-        print('Written %s' % output_name)
+        print('--> %s' % 'corner_' + self.config_param.chain_short_fname + '.pdf')
 
     def plot_gr_indicator(self):
         """
@@ -245,7 +244,7 @@ class ProcessModel:
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
 
-        print('Written %s' % output_name)
+        print('--> %s' % 'GR_' + self.config_param.chain_short_fname + '.png')
 
 
     def write_model_spectrum(self):
@@ -261,7 +260,7 @@ class ProcessModel:
                                       self.config_param.dflux,
                                       self.model_flux],
                                       header='wave\tflux\terror\tmodel\n')
-        print('Written %s' % output_fname)
+        print('--> %s' % 'spec_' + self.config_param.chain_short_fname+'.dat')
         
     def write_model_summary(self):
         """
@@ -272,7 +271,7 @@ class ProcessModel:
         output_summary_fname = self.config_param.data_product_path_files + \
                         '/params_'+self.config_param.chain_short_fname+'.dat'
         write_mcmc_stats(self.config_param,output_summary_fname)
-
+        print('--> %s' % 'params_'+self.config_param.chain_short_fname+'.dat')
 
 
 def bvp_process(config_fname, redshift, dv):
@@ -296,7 +295,7 @@ def main():
     parser.add_argument('redshift',help="central redshift for plotting spectrum", nargs='?',type=float)
     parser.add_argument('dv',help="velocity range for spectrum (+/-dv)", nargs='?',type=float)
     #parser.add_argument("--truths", nargs='+', type=float)
-    parser.add_argument('-t', "--test",help="plot data product of test", action="store_true")    
+    parser.add_argument('-t', "--test",help="plot data product of test", action="store_true")
     
     args = parser.parse_args()
 

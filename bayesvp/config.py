@@ -259,14 +259,8 @@ class DefineParams:
             # Each component gets a set of all of the transitions data
             for j in range(len(self.wave_begins)):
                 # each wavelength regions gets all of the transitions
-                temp_params = get_transitions_params(atom,state,self.wave_begins[j],self.wave_ends[j],float(self.redshift))
-
-                # Check if the desired ion has transition in the restwavelength. 
-                # see get_transitions_params in utilities.py
-                if np.isnan(temp_params):
-                    sys.exit('Could not find any transitions of %s%s in wavelength range. ' % (atom,state) +
-                            'Check redshift and wavelength range. Exiting program...' )
-
+                temp_params = get_transitions_params(atom,state,self.wave_begins[j],
+                                                    self.wave_ends[j],float(self.redshift))
                 transitions_params_array[i].append(temp_params)
         
         # Shape = (n_component,n_regions,n_transitions,4) 

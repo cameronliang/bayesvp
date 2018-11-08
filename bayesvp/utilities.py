@@ -255,8 +255,6 @@ def write_mcmc_stats(config_params_obj,output_fname):
 				 output_stats[6]))
 		
 	f.close()
-	print('Written %s' % output_fname)
-
 	return
 
 def extrapolate_pdf(x,pdf,left_boundary_x,right_boundary_x,x_stepsize,slope=10):
@@ -443,7 +441,8 @@ def get_transitions_params(atom,state,wave_start,wave_end,redshift):
  
 
 	if len(inds) == 0:
-		return np.nan
+		sys.exit('Could not find any transitions of %s%s in wavelength range. ' % (atom,state) +
+				'Check redshift and wavelength range. Exiting program...' )
 	else:
 		return np.array([osc_f[inds],wave[inds],Gamma[inds], mass[inds]]).T
 
@@ -452,7 +451,7 @@ def conf_interval(x, pdf, conf_level):
     return np.sum(pdf[pdf > x])-conf_level
 
 def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
-		hist1d_color='#3681f9',figsize=[6,6], figname=None, fontsize=10,labelsize=10):
+		hist1d_color='#3681f9',figsize=[6,6], figname=None, fontsize=None,labelsize=None):
 	"""
 	Plot the multi-dimensional and marginalized posterior distribution (e.g., `corner` plot)
 
@@ -476,6 +475,8 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 		full path and name of the figure to be written 
 	fontsize: int
 		fontsize of the labels 
+	labelsize: int 
+		size of tickmark labels
 	"""
 
 	import matplotlib.gridspec as gridspec
@@ -484,7 +485,7 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 	import scipy.optimize as opt
 	from matplotlib.colors import LogNorm
 	from matplotlib.ticker import MaxNLocator, NullLocator
-
+	import matplotlib.ticker as ticker
 
 	import warnings
 	# ignore warnings if matplotlib version is older than 1.5.3
@@ -497,6 +498,20 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 	npar = np.size(par[1,:])
 	fig = plt.figure(figsize=figsize)
 	gs = gridspec.GridSpec(npar, npar,wspace=0.05,hspace=0.05)
+
+	
+	if labelsize is None:
+		if npar <= 3: 
+			labelsize = 7
+		else:
+			labelsize = 5
+
+	if fontsize is None:
+		if npar <= 3: 
+			fontsize = 11
+		else:
+			fontsize = 10
+
 
 	for h,v in it.product(range(npar), range(npar)):
 		ax = plt.subplot(gs[h, v])
@@ -558,11 +573,25 @@ def triage(par, weights, parnames, nbins = 30, hist2d_color=plt.cm.PuBu,
 
 		if v == 0:
 			ax.set_ylabel(parnames[h],fontsize=fontsize)
-			ax.get_yaxis().set_label_coords(-0.2,0.5)
-			
+			if npar <=3:
+				ax.get_yaxis().set_label_coords(-0.35,0.5)
+			else:
+				ax.get_yaxis().set_label_coords(-0.4,0.5)
+			ax.locator_params(nbins=5, axis='y')
+			labels = ax.get_yticklabels()
+			for label in labels: 
+				label.set_rotation(20) 			
 		if h == npar-1:
+
+			ax.xaxis.set_major_locator(MaxNLocator(prune='lower'))
+			ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.2f'))
 			ax.set_xlabel(parnames[v],fontsize=fontsize)
-			ax.get_xaxis().set_label_coords(0.5,-0.35)
+			ax.locator_params(nbins=5, axis='x')
+			
+			if npar <=3:
+				ax.get_xaxis().set_label_coords(0.5,-0.35)
+			else:
+				ax.get_xaxis().set_label_coords(0.5,-0.6)
 			labels = ax.get_xticklabels()
 			for label in labels: 
 				label.set_rotation(80) 
