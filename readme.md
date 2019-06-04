@@ -133,6 +133,6 @@ or you can cite this one:
 
 
 
-# Change logs 
+### Release Notes
 
-[0.2.4] - 2019-06-04 - Added options to change to Agg backend from tkAgg. 
+[0.2.4] - 2019-06-04: Added options to change to Agg backend from tkAgg. 
