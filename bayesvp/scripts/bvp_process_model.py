@@ -9,13 +9,17 @@
 #
 ###############################################################################
 
+import matplotlib
+try: 
+    matplotlib.use('tkAgg')
+except:
+    matplotlib.use('Agg')
 
 import numpy as np
 import sys
 import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-
 
 from bayesvp.vp_model import continuum_model_flux
 from bayesvp.utilities import write_mcmc_stats, compute_burnin_GR
@@ -29,7 +33,9 @@ class ProcessModel:
 
         self.config_param = config_param
         mcmc_chain_fname = config_param.chain_fname + '.npy'
+        print config_param.chain_fname
         self.burnin = compute_burnin_GR(config_param.chain_fname + '_GR.dat')
+        
         self.mcmc_chain = np.load(mcmc_chain_fname)
         self.mcmc_chain = self.mcmc_chain[self.burnin:, :, :]
 
@@ -240,11 +246,11 @@ class ProcessModel:
         plt.ylabel(r'$R_{\rm GR} - 1$',fontsize=15)
 
         output_name = self.config_param.data_product_path_plots + '/GR_' + \
-                      self.config_param.chain_short_fname + '.png'
+                      self.config_param.chain_short_fname + '.pdf'
         plt.savefig(output_name,bbox_inches='tight',dpi=100)
         plt.clf()
 
-        print('--> %s' % 'GR_' + self.config_param.chain_short_fname + '.png')
+        print('--> %s' % 'GR_' + self.config_param.chain_short_fname + '.pdf')
 
 
     def write_model_spectrum(self):
