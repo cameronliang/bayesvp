@@ -131,3 +131,6 @@ or you can cite this one:
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
     }
 
+# Change logs 
+
+[0.2.4] - 2019-06-04 - Added options to change to Agg backend from tkAgg. 

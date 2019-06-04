@@ -14,6 +14,7 @@ try:
     matplotlib.use('tkAgg')
 except:
     matplotlib.use('Agg')
+    print("Using Agg as plotting backend...")
 
 import numpy as np
 import sys
