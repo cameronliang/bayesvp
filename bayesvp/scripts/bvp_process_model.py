@@ -10,10 +10,12 @@
 ###############################################################################
 
 import matplotlib
+from matplotlib import rc
+
 try: 
-    matplotlib.use('Agg')
+    matplotlib.use('PDF')
 except:
-    matplotlib.use('PS')
+    matplotlib.use('Agg')
     
 
 import numpy as np
