@@ -11,10 +11,10 @@
 
 import matplotlib
 try: 
-    matplotlib.use('tkAgg')
-except:
     matplotlib.use('Agg')
-    print("Using Agg as plotting backend...")
+except:
+    matplotlib.use('PS')
+    
 
 import numpy as np
 import sys
