@@ -94,7 +94,7 @@ Notes/Tips/Cautions:
 License & Citing
 ----------------
 
-Author:        Cameron Liang (jwliang@oddjob.uchicago.edu; cameron.liang@gmail.com)
+Author:        Cameron Liang (cameron.liang@gmail.com)
 
 Contributors:  Andrey Kravtsov
 
@@ -102,18 +102,24 @@ License:       MIT. Copyright (c) 2017-2018
 
 If you use ``bayesvp``, please cite the paper: 
 
-    @ARTICLE{Liang2017,
-       author = {{Liang}, C. and {Kravtsov}, A. and {Agertz}, O.},
+    @ARTICLE{Liang2018,
+       author = {{Liang}, Cameron J. and {Kravtsov}, Andrey V. and {Agertz}, Oscar},
         title = "{Observing the circumgalactic medium of simulated galaxies through synthetic absorption spectra}",
-      journal = {ArXiv e-prints},
-    archivePrefix = "arXiv",
+      journal = {\mnras},
+     keywords = {galaxies: haloes, quasars: absorption lines, Astrophysics - Astrophysics of Galaxies},
+         year = "2018",
+        month = "Sep",
+       volume = {479},
+       number = {2},
+        pages = {1822-1835},
+          doi = {10.1093/mnras/sty1668},
+    archivePrefix = {arXiv},
        eprint = {1710.00411},
-     keywords = {Astrophysics - Astrophysics of Galaxies},
-         year = 2017,
-        month = oct,
-       adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171000411L},
+     primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2018MNRAS.479.1822L},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
     }
+
 
 
 or you can cite this one: 
@@ -136,3 +142,4 @@ or you can cite this one:
 ### Release Notes
 
 [0.2.4] - 2019-06-04: Added options to change to Agg backend from tkAgg. 
+[0.2.5] - 2019-12-19: Added option in config file for user defined output path
