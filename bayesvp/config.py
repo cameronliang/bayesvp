@@ -1,6 +1,6 @@
 ################################################################################
 #
-# config.py 		(c) Cameron Liang 
+# config.py 		(c) Cameron Liang
 #						University of Chicago
 #     				    jwliang@oddjob.uchicago.edu
 #
@@ -103,7 +103,7 @@ class DefineParams:
         ########################################################################
         
         # continuum model preset to false
-        self.cont_normalize  = False
+        self.cont_normalize = False
         self.cont_nparams = 0
         self.cont_prior   = 1.0
         self.self_bvp_test = False

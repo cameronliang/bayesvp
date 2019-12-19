@@ -5,7 +5,7 @@ with io.open('README.rst', encoding = 'utf-8') as f:
 	long_description = f.read()
 
 setup(name='bayesvp',
-    version='0.2.5',
+    version='0.2.6',
     description='Bayesian MCMC Voigt Profile Fitting',
     long_description_content_type='text/markdown',
     long_description = long_description,

@@ -10,11 +10,13 @@
 ###############################################################################
 
 import matplotlib
+from matplotlib import rc
+
 try: 
-    matplotlib.use('tkAgg')
+    matplotlib.use('PDF')
 except:
     matplotlib.use('Agg')
-    print("Using Agg as plotting backend...")
+    
 
 import numpy as np
 import sys
