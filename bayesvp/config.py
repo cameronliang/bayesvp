@@ -120,7 +120,8 @@ class DefineParams:
 
                 else:
                     self.spec_path = line[1]
-
+            elif 'outpath' in line: 
+                self.short_outpath = line[1] 
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
 
@@ -314,11 +315,14 @@ class DefineParams:
         # Make directories for data products
         if self.self_bvp_test:
             # write to local direcotry if it is test to avoid permission issues in bayesvp library location
-            self.output_path = '.' + '/bvp_output_z' + str(self.redshift)
+            self.output_path = '.' + '/bvp_output'
 
         else:
-            self.output_path = self.spec_path + '/bvp_output_z' + str(self.redshift)
-
+            #self.output_path = self.spec_path + '/bvp_output_z' + str(self.redshift)
+            if hasattr(self,'short_outpath'):
+                self.output_path = self.spec_path + '/' + self.short_outpath
+            else:
+                self.output_path = self.spec_path + '/bvp_output'
         self.mcmc_outputpath = self.output_path + '/chains'
         
         self.data_product_path = self.output_path +'/data_products'
